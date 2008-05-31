@@ -8,6 +8,9 @@ CFLAGS_WINDOWS=-s
 
 all: undbx undbx.exe
 
+clean:
+	rm -f undbx undbx.exe
+
 undbx: $(SRCS) $(HDRS) Makefile
 	gcc -o undbx $(CPPFLAGS) $(CFLAGS) $(CFLAGS_LINUX) $(LDFLAGS) $(SRCS)
 
