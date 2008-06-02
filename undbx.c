@@ -5,12 +5,14 @@
 #include "dbxread.h"
 #include "dbxsys.h"
 
+typedef enum { DBX_SAVE_NOOP, DBX_SAVE_OK, DBX_SAVE_ERROR } dbx_save_status_t;
+
 static int _str_cmp(const char **ia, const char **ib)
 {
   return strcmp(*ia, *ib);
 }
 
-static void _save_message(char *dir, char *filename, char *message, long size)
+static dbx_save_status_t _save_message(char *dir, char *filename, char *message, long size)
 {
   FILE *eml = NULL;
   char *cwd = NULL;
@@ -20,13 +22,13 @@ static void _save_message(char *dir, char *filename, char *message, long size)
   cwd = sys_getcwd();
   if (cwd == NULL) {
     perror("_save_message (sys_getcwd)");
-    return;
+    return DBX_SAVE_ERROR;
   }
   
   rc = sys_chdir(dir);
   if (rc != 0) {
     perror("_save_message (sys_chdir)");
-    return;
+    return DBX_SAVE_ERROR;
   }
 
   eml = fopen(filename, "wb");
@@ -37,22 +39,24 @@ static void _save_message(char *dir, char *filename, char *message, long size)
   
   if (eml == NULL) {
     perror("_save_message (fopen)");    
-    return;
+    return DBX_SAVE_ERROR;
   }
 
   b = fwrite(message, 1, size, eml);
   if (b != size) {
     perror("_save_message (fwrite)");
-    return;
+    return DBX_SAVE_ERROR;
   }
 
   printf("Extracted message: %s\n", filename);
   fflush(stdout);
   fclose(eml);
+  return DBX_SAVE_OK;
 }
 
-static void _maybe_save_message(dbx_t *dbx, int imessage, char *dir, int force)
+static dbx_save_status_t _maybe_save_message(dbx_t *dbx, int imessage, char *dir, int force)
 {
+  dbx_save_status_t status = DBX_SAVE_NOOP;
   dbx_info_t *info = dbx->info + imessage;
   long size = 0;
   long message_size = 0;
@@ -63,14 +67,25 @@ static void _maybe_save_message(dbx_t *dbx, int imessage, char *dir, int force)
   
   if (force || (info->valid & DBX_MASK_MSGSIZE) == 0 || size != info->message_size) {
     message = dbx_message(dbx, imessage, &message_size);
-    if (force || (size != message_size)) 
-      _save_message(dir, info->filename, message, message_size);
+    if (force || (size != message_size)) {
+      status = _save_message(dir, info->filename, message, message_size);
+      if (status == DBX_SAVE_ERROR) {
+	printf("Bad message: %s\n", info->filename);
+	fflush(stdout);
+      }
+    }
     free(message);
   }
+
+  return status;
 }
 
 static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file)
 {
+  int deleted = 0;
+  int saved = 0;
+  int errors = 0;
+  
   int no_more_messages = 0;
   int no_more_files = 0;
   char **eml_files = NULL;
@@ -133,8 +148,10 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file)
   qsort(eml_files, num_eml_files, sizeof(char *), (dbx_cmpfunc_t) _str_cmp);
       
   while (!no_more_messages || !no_more_files) {
-
+    
+    dbx_save_status_t status = DBX_SAVE_NOOP;
     int cond;
+    
     if (!no_more_messages && !no_more_files) {
       cond = strcmp(dbx->info[imessage].filename, eml_files[ifile]);
     }
@@ -145,13 +162,13 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file)
       
     if (cond < 0) {
       /* message not found on disk: extract from dbx */
-      _maybe_save_message(dbx, imessage, eml_dir, 1); 
+      status = _maybe_save_message(dbx, imessage, eml_dir, 1); 
       imessage++;
       no_more_messages = (imessage == dbx->message_count);
     }
     else if (cond == 0) {
       /* message found on disk: extract from dbx if modified */
-      _maybe_save_message(dbx, imessage, eml_dir, 0);
+      status = _maybe_save_message(dbx, imessage, eml_dir, 0);
       imessage++;
       no_more_messages = (imessage == dbx->message_count);	
       ifile++;
@@ -160,12 +177,21 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file)
     else {
       /* file on disk not found in dbx: delete from disk */
       sys_delete(eml_dir, eml_files[ifile]);
-      printf("Deleted message %s\n", eml_files[ifile]);
+      printf("Deleted file: %s\n", eml_files[ifile]);
       ifile++;
-      no_more_files = (ifile == num_eml_files);	
+      no_more_files = (ifile == num_eml_files);
+      deleted++;
     }
+
+    if (status == DBX_SAVE_OK)
+      saved++;
+    if (status == DBX_SAVE_ERROR)
+      errors++;
   }
 
+  printf("%d messages saved, %d skipped, %d errors, %d files deleted\n", saved, dbx->message_count - saved - errors, errors, deleted);
+  fflush(stdout);
+  
   sys_glob_free(eml_files);
 
   free(eml_dir);
