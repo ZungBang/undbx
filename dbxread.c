@@ -69,6 +69,16 @@ static filetime_t _dbx_read_date(FILE *file, long offset)
   return filetime;
 }
 
+static long _dbx_read_long(FILE *file, long offset, long value)
+{
+  long val = value;
+  if (offset) {
+    fseek(file, offset, SEEK_SET);
+    fread(&val, 4, 1, file);
+  }
+  return val;
+}
+
 static void _dbx_set_filename(dbx_info_t *info)
 {
   int i;
@@ -159,28 +169,28 @@ static void _dbx_read_info(dbx_t *dbx)
       fread(&type, 1, 1, dbx->file);
       fread(&value, 3, 1, dbx->file);
 
-      /* msb means direct storage (we actually ignore it and consider all uints as direct) */
+      /* msb means direct storage */
       offset = (type & 0x80)? 0:(index + 12 + 4 * count + value);
 
       /* dirt ugly code follows ... */
       switch (type & 0x7f) {
       case 0x00:
-	dbx->info[i].message_index = value;
+	dbx->info[i].message_index = _dbx_read_long(dbx->file, offset, value);
 	dbx->info[i].valid |= DBX_MASK_INDEX;
 	break;
       case 0x01:
-	dbx->info[i].flags = value;
+	dbx->info[i].flags = _dbx_read_long(dbx->file, offset, value);
 	dbx->info[i].valid |= DBX_MASK_FLAGS;
 	break;
       case 0x02:
 	dbx->info[i].send_create_time = _dbx_read_date(dbx->file, offset);
 	break;
       case 0x03:
-	dbx->info[i].body_lines = value;
+	dbx->info[i].body_lines = _dbx_read_long(dbx->file, offset, value);
 	dbx->info[i].valid |= DBX_MASK_BODYLINES;	
 	break;
       case 0x04:
-	dbx->info[i].message_address = value;
+	dbx->info[i].message_address = _dbx_read_long(dbx->file, offset, value);
 	dbx->info[i].valid |= DBX_MASK_MSGADDR;	
 	break;
       case 0x05:
@@ -214,11 +224,11 @@ static void _dbx_read_info(dbx_t *dbx)
 	dbx->info[i].sender_address = _dbx_read_string(dbx->file, offset);
 	break;
       case 0x10:
-	dbx->info[i].message_priority = value;
+	dbx->info[i].message_priority = _dbx_read_long(dbx->file, offset, value);
 	dbx->info[i].valid |= DBX_MASK_MSGPRIO;	
 	break;
       case 0x11:
-	dbx->info[i].message_size = value;
+	dbx->info[i].message_size = _dbx_read_long(dbx->file, offset, value);
 	dbx->info[i].valid |= DBX_MASK_MSGSIZE;	
 	break;
       case 0x12:
