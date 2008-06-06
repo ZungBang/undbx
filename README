@@ -1,43 +1,62 @@
-UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
+=UnDBX=
+*[http://code.google.com/p/undbx/ UnDBX]* -
+Tool to extract e-mail messages from Outlook Express `.dbx` files. 
+
 Copyright (C) 2008 Avi Rozen <avi.rozen@gmail.com>
-http://code.google.com/p/undbx/
 
-INSTALLATION
-============
-There's no installer or setup program. Simply extract undbx.exe from
-the ZIP file to some directory and run it from there.
+==INSTALLATION==
+There's no installer or setup program. Simply extract `undbx.exe` from
+the distribution `.zip` file to some directory and run it from there.
 
-USAGE
-=====
+==USAGE==
 Run the following command in a command ("DOS") shell, to extract e-mail
-messages from all the DBX files in <DBX-DIRECTORY> to a corresponding
-sub-directory in <OUTPUT-DIRECTORY>: 
+messages from all the `.dbx` files in `<DBX-DIRECTORY>` to a corresponding
+sub-directory in `<OUTPUT-DIRECTORY>`: 
 
+{{{
 undbx <DBX-DIRECTORY> <OUTPUT-DIRECTORY>
+}}}
 
-OPERATION
-=========
-On first invocation all messages will be extracted as individual EML
+==OPERATION==
+On first invocation all messages will be extracted as individual `.eml`
 files. Subsequent invocations will only _update_ the output directory:
-EML files that do not correspond to messages in the DBX file will be
+`.eml` files that do not correspond to messages in the `.dbx` file will be
 treated as deleted messages and will be deleted from the
 disk. Furthermore, only new messages, that do not correspond to files
-on disk, will be extracted from the DBX file. 
+on disk, will be extracted from the `.dbx` file.
 
-SOURCE CODE
-===========
-UnDBX source code can be downloaded and/or cloned from its public Git
+*UnDBX* was written to facilitate _fast_ incremental backup of `.dbx`
+ files.  
+
+==SOURCE CODE==
+
+===REPOSITORY===
+*UnDBX* source code can be downloaded and/or cloned from its public Git
 repository at
 http://github.com/ZungBang/undbx/tree
 
-BUGS
-====
-Please report problems via the UnDBX issue tracking system:
+===COMPILING===
+I compile the code with the MinGW cross compiler on a Debian
+GNU/Linux box. To compile this on Microsoft Windows you'll need to
+install MinGW from http://www.mingw.org and tweak the
+`Makefile`. Please send a patch if you care enough. 
+
+==BUGS==
+Please report problems via the *UnDBX* issue tracking system:
 http://code.google.com/p/undbx/issues/list
 
-LICENSE
-=======
-UnDBX is free software: you can redistribute it and/or modify
+==CERTIFICATION==
+Well, it works on my machine :-)
+[http://jcooney.net/archive/2007/02/01/42999.aspx 1]
+[http://www.codinghorror.com/blog/archives/000818.html 2].
+
+==CREDITS==
+The *UnDBX* `.dbx` file format parsing code is based on `DbxConv` - a
+DBX to MBOX Converter, by Ulrich Krebs <ukrebs@freenet.de>
+[http://freenet-homepage.de/ukrebs/english/dbxconv.html 1].
+
+==LICENSE==
+*UnDBX* is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -49,6 +68,4 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
 
