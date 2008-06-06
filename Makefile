@@ -40,5 +40,9 @@ undbx: $(SRCS) $(HDRS) Makefile
 undbx.exe: $(SRCS) $(HDRS) Makefile
 	i586-mingw32msvc-gcc -o undbx.exe $(CPPFLAGS) $(CFLAGS) $(CFLAGS_WINDOWS) $(LDFLAGS) $(SRCS)
 
-$(PACKAGE): undbx.exe README COPYING
-	zip $(PACKAGE) undbx.exe README COPYING
+$(PACKAGE): MD5SUMS
+	zip $(PACKAGE) undbx.exe README COPYING MD5SUMS
+
+MD5SUMS: undbx.exe README COPYING
+	md5sum undbx.exe README COPYING > MD5SUMS
+
