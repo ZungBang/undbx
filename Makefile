@@ -23,6 +23,7 @@
 VERSION=0.11
 PACKAGE=undbx-$(VERSION).zip
 SRCS=undbx.c dbxsys.c dbxread.c
+FILES=undbx.exe README COPYING
 HDRS=dbxsys.h dbxread.h
 CPPFLAGS+=-DDBX_VERSION=\"$(VERSION)\"
 CFLAGS+=-Wall -O3 
@@ -32,7 +33,7 @@ CFLAGS_WINDOWS=-s
 all: undbx $(PACKAGE)
 
 clean:
-	rm -f undbx undbx.exe
+	rm -f undbx undbx.exe $(PACKAGE) MD5SUMS
 
 undbx: $(SRCS) $(HDRS) Makefile
 	gcc -o undbx $(CPPFLAGS) $(CFLAGS) $(CFLAGS_LINUX) $(LDFLAGS) $(SRCS)
@@ -41,8 +42,8 @@ undbx.exe: $(SRCS) $(HDRS) Makefile
 	i586-mingw32msvc-gcc -o undbx.exe $(CPPFLAGS) $(CFLAGS) $(CFLAGS_WINDOWS) $(LDFLAGS) $(SRCS)
 
 $(PACKAGE): MD5SUMS
-	zip $(PACKAGE) undbx.exe README COPYING MD5SUMS
+	zip $(PACKAGE) $(FILES) MD5SUMS
 
-MD5SUMS: undbx.exe README COPYING
-	md5sum undbx.exe README COPYING > MD5SUMS
+MD5SUMS: $(FILES)
+	md5sum $(FILES) > MD5SUMS
 
