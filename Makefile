@@ -21,7 +21,8 @@
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 VERSION=0.11
-PACKAGE=undbx-$(VERSION).zip
+UNDBX=undbx-$(VERSION)
+PACKAGE=$(UNDBX).zip
 SRCS=undbx.c dbxsys.c dbxread.c
 FILES=undbx.exe README COPYING
 HDRS=dbxsys.h dbxread.h
@@ -30,10 +31,10 @@ CFLAGS+=-Wall -O3
 CFLAGS_LINUX=-g
 CFLAGS_WINDOWS=-s
 
-all: undbx $(PACKAGE)
+all: undbx MD5SUM
 
 clean:
-	rm -f undbx undbx.exe $(PACKAGE) MD5SUMS
+	rm -rf undbx undbx.exe $(PACKAGE) MD5SUM $(UNDBX)
 
 undbx: $(SRCS) $(HDRS) Makefile
 	gcc -o undbx $(CPPFLAGS) $(CFLAGS) $(CFLAGS_LINUX) $(LDFLAGS) $(SRCS)
@@ -41,9 +42,12 @@ undbx: $(SRCS) $(HDRS) Makefile
 undbx.exe: $(SRCS) $(HDRS) Makefile
 	i586-mingw32msvc-gcc -o undbx.exe $(CPPFLAGS) $(CFLAGS) $(CFLAGS_WINDOWS) $(LDFLAGS) $(SRCS)
 
-$(PACKAGE): MD5SUMS
-	zip $(PACKAGE) $(FILES) MD5SUMS
+$(PACKAGE): $(FILES)
+	mkdir -p $(UNDBX)
+	cp -a $(FILES) $(UNDBX)
+	zip $(PACKAGE) $(UNDBX)/*
+	rm -rf $(UNDBX)
 
-MD5SUMS: $(FILES)
-	md5sum $(FILES) > MD5SUMS
+MD5SUM: $(PACKAGE)
+	md5sum $(PACKAGE) > MD5SUM
 
