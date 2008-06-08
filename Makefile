@@ -23,6 +23,7 @@
 VERSION=0.11
 UNDBX=undbx-$(VERSION)
 PACKAGE=$(UNDBX).zip
+MD5SUM=$(PACKAGE).md5sum
 SRCS=undbx.c dbxsys.c dbxread.c
 FILES=undbx.exe README COPYING
 HDRS=dbxsys.h dbxread.h
@@ -31,10 +32,10 @@ CFLAGS+=-Wall -O3
 CFLAGS_LINUX=-g
 CFLAGS_WINDOWS=-s
 
-all: undbx MD5SUM
+all: undbx $(MD5SUM)
 
 clean:
-	rm -rf undbx undbx.exe $(PACKAGE) MD5SUM $(UNDBX)
+	rm -rf undbx undbx.exe $(PACKAGE) $(MD5SUM) $(UNDBX)
 
 undbx: $(SRCS) $(HDRS) Makefile
 	gcc -o undbx $(CPPFLAGS) $(CFLAGS) $(CFLAGS_LINUX) $(LDFLAGS) $(SRCS)
@@ -48,6 +49,6 @@ $(PACKAGE): $(FILES)
 	zip $(PACKAGE) $(UNDBX)/*
 	rm -rf $(UNDBX)
 
-MD5SUM: $(PACKAGE)
-	md5sum $(PACKAGE) > MD5SUM
+$(MD5SUM): $(PACKAGE)
+	md5sum $(PACKAGE) > $(MD5SUM)
 
