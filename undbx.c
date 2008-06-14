@@ -94,8 +94,8 @@ static dbx_save_status_t _maybe_save_message(dbx_t *dbx, int imessage, char *dir
     if (force || (size != message_size)) {
       status = _save_message(dir, info->filename, message, message_size);
       if (status == DBX_SAVE_ERROR) {
-	printf("Bad message: %s\n", info->filename);
-	fflush(stdout);
+        printf("Bad message: %s\n", info->filename);
+        fflush(stdout);
       }
     }
     free(message);
@@ -168,7 +168,7 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file)
 
   no_more_messages = (imessage == dbx->message_count);
   no_more_files = (ifile == num_eml_files);
-	
+        
   qsort(eml_files, num_eml_files, sizeof(char *), (dbx_cmpfunc_t) _str_cmp);
       
   while (!no_more_messages || !no_more_files) {
@@ -194,7 +194,7 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file)
       /* message found on disk: extract from dbx if modified */
       status = _maybe_save_message(dbx, imessage, eml_dir, 0);
       imessage++;
-      no_more_messages = (imessage == dbx->message_count);	
+      no_more_messages = (imessage == dbx->message_count);      
       ifile++;
       no_more_files = (ifile == num_eml_files);
     }

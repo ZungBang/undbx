@@ -90,13 +90,13 @@ static void _dbx_set_filename(dbx_info_t *info)
   static const char valid_char = '_';
 
   snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix) - 1, "%s_%s_%s",
-	   info->sender_name? info->sender_name:"_(no_name)_",
-	   info->sender_address? info->sender_address:"_(no_address)_",
-	   info->subject? info->subject:"(no_subject)");
+           info->sender_name? info->sender_name:"_(no_name)_",
+           info->sender_address? info->sender_address:"_(no_address)_",
+           info->subject? info->subject:"(no_subject)");
   
   sprintf(suffix, ".%08X.%08X.eml.00000000",
-	  (unsigned int) (info->receive_create_time & 0xFFFFFFFFULL),
-	  (unsigned int) (info->send_create_time & 0xFFFFFFFFULL));
+          (unsigned int) (info->receive_create_time & 0xFFFFFFFFULL),
+          (unsigned int) (info->send_create_time & 0xFFFFFFFFULL));
   strcat(filename, suffix);
 
   l = strlen(filename);
@@ -127,16 +127,16 @@ static void _dbx_uniquify_filenames(dbx_t *dbx)
     n = 1;
     if (i < dbx->message_count) {
       do {
-	sprintf(dbx->info[i - 1].filename + strlen(dbx->info[i - 1].filename) - cl, 
-		".%08X.eml",
-		(unsigned int) dbx->info[i - 1].index);
-	i++;
-	n++;
+        sprintf(dbx->info[i - 1].filename + strlen(dbx->info[i - 1].filename) - cl, 
+                ".%08X.eml",
+                (unsigned int) dbx->info[i - 1].index);
+        i++;
+        n++;
       } while (i < dbx->message_count && strcmp(dbx->info[i - 1].filename, dbx->info[i].filename) == 0);
       
       sprintf(dbx->info[i - 1].filename + strlen(dbx->info[i - 1].filename) - cl,
-	      ".%08X.eml",
-	      (unsigned int) dbx->info[i - 1].index);
+              ".%08X.eml",
+              (unsigned int) dbx->info[i - 1].index);
     }
   }
 }
@@ -175,77 +175,77 @@ static void _dbx_read_info(dbx_t *dbx)
       /* dirt ugly code follows ... */
       switch (type & 0x7f) {
       case 0x00:
-	dbx->info[i].message_index = _dbx_read_long(dbx->file, offset, value);
-	dbx->info[i].valid |= DBX_MASK_INDEX;
-	break;
+        dbx->info[i].message_index = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].valid |= DBX_MASK_INDEX;
+        break;
       case 0x01:
-	dbx->info[i].flags = _dbx_read_long(dbx->file, offset, value);
-	dbx->info[i].valid |= DBX_MASK_FLAGS;
-	break;
+        dbx->info[i].flags = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].valid |= DBX_MASK_FLAGS;
+        break;
       case 0x02:
-	dbx->info[i].send_create_time = _dbx_read_date(dbx->file, offset);
-	break;
+        dbx->info[i].send_create_time = _dbx_read_date(dbx->file, offset);
+        break;
       case 0x03:
-	dbx->info[i].body_lines = _dbx_read_long(dbx->file, offset, value);
-	dbx->info[i].valid |= DBX_MASK_BODYLINES;	
-	break;
+        dbx->info[i].body_lines = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].valid |= DBX_MASK_BODYLINES;       
+        break;
       case 0x04:
-	dbx->info[i].message_address = _dbx_read_long(dbx->file, offset, value);
-	dbx->info[i].valid |= DBX_MASK_MSGADDR;	
-	break;
+        dbx->info[i].message_address = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].valid |= DBX_MASK_MSGADDR; 
+        break;
       case 0x05:
-	dbx->info[i].original_subject = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].original_subject = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x06:
-	dbx->info[i].save_time = _dbx_read_date(dbx->file, offset);
-	break;
+        dbx->info[i].save_time = _dbx_read_date(dbx->file, offset);
+        break;
       case 0x07:
-	dbx->info[i].message_id = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].message_id = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x08:
-	dbx->info[i].subject = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].subject = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x09:
-	dbx->info[i].sender_address_and_name = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].sender_address_and_name = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x0A:
-	dbx->info[i].message_id_replied_to = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].message_id_replied_to = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x0B:
-	dbx->info[i].server_newsgroup_message_number = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].server_newsgroup_message_number = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x0C:
-	dbx->info[i].server = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].server = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x0D:
-	dbx->info[i].sender_name = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].sender_name = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x0E:
-	dbx->info[i].sender_address = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].sender_address = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x10:
-	dbx->info[i].message_priority = _dbx_read_long(dbx->file, offset, value);
-	dbx->info[i].valid |= DBX_MASK_MSGPRIO;	
-	break;
+        dbx->info[i].message_priority = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].valid |= DBX_MASK_MSGPRIO; 
+        break;
       case 0x11:
-	dbx->info[i].message_size = _dbx_read_long(dbx->file, offset, value);
-	dbx->info[i].valid |= DBX_MASK_MSGSIZE;	
-	break;
+        dbx->info[i].message_size = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].valid |= DBX_MASK_MSGSIZE; 
+        break;
       case 0x12:
-	dbx->info[i].receive_create_time = _dbx_read_date(dbx->file, offset);
-	break;
+        dbx->info[i].receive_create_time = _dbx_read_date(dbx->file, offset);
+        break;
       case 0x13:
-	dbx->info[i].receiver_name = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].receiver_name = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x14:
-	dbx->info[i].receiver_address = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].receiver_address = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x1A:
-	dbx->info[i].account_name = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].account_name = _dbx_read_string(dbx->file, offset);
+        break;
       case 0x1B:
-	dbx->info[i].account_registry_key = _dbx_read_string(dbx->file, offset);
-	break;
+        dbx->info[i].account_registry_key = _dbx_read_string(dbx->file, offset);
+        break;
       }
       pos += 4;
     }
@@ -295,7 +295,7 @@ static int _dbx_read_index(dbx_t *dbx, long pos)
     pos += 12;
     if (index_count > 0) {
       if (!_dbx_read_index(dbx, next_table))
-	return 0;
+        return 0;
     }
   }
 
@@ -307,7 +307,7 @@ static int _dbx_read_indexes(dbx_t *dbx)
 {
   long index_ptr;
   long item_count;
-	
+        
   fseek(dbx->file, INDEX_POINTER, SEEK_SET);
   fread(&index_ptr, 4, 1, dbx->file);
 
@@ -342,13 +342,13 @@ static void _dbx_init(dbx_t *dbx)
     dbx->type = DBX_TYPE_EMAIL;
   }
   else if (signature[0] == 0x36464D4A &&
-	   signature[1] == 0x00010003) {
+           signature[1] == 0x00010003) {
     dbx->type = DBX_TYPE_OE4;
   }
   else if (signature[0]==0xFE12ADCF &&
-	   signature[1]==0x6F74FDC6 && 
-	   signature[2]==0x11D1E366 &&
-	   signature[3]==0xC0004E9A) {
+           signature[1]==0x6F74FDC6 && 
+           signature[2]==0x11D1E366 &&
+           signature[3]==0xC0004E9A) {
     dbx->type = DBX_TYPE_FOLDER;
   }
   else {
@@ -449,7 +449,7 @@ char *dbx_message(dbx_t *dbx, int msg_number, long *psize)
     fread(&type, 1, 1, dbx->file);
     value=0;
     fread(&value, 3, 1, dbx->file);
-		
+                
     if (type == 0x84) {
       msg_offset = value;
       break;
@@ -459,7 +459,7 @@ char *dbx_message(dbx_t *dbx, int msg_number, long *psize)
       break;
     }
   }
-	
+        
   if (msg_offset == 0 && msg_offset_ptr != 0) {
     fseek(dbx->file, msg_offset_ptr, SEEK_SET);
     fread(&msg_offset, 4, 1, dbx->file);
