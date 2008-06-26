@@ -10,8 +10,8 @@ the distribution `.zip` file to some directory and run it from there.
 
 ==USAGE==
 Run the following command in a command ("DOS") shell, to extract e-mail
-messages from all the `.dbx` files in `<DBX-DIRECTORY>` to a corresponding
-sub-directory in `<OUTPUT-DIRECTORY>`: 
+messages from all the `.dbx` files in `<DBX-DIRECTORY>` to corresponding
+sub-directories in `<OUTPUT-DIRECTORY>`: 
 
 {{{
 undbx <DBX-DIRECTORY> <OUTPUT-DIRECTORY>
@@ -19,8 +19,8 @@ undbx <DBX-DIRECTORY> <OUTPUT-DIRECTORY>
 
 ==OPERATION==
 On first invocation all messages will be extracted as individual `.eml`
-files. Subsequent invocations will only _update_ the output directory:
-`.eml` files that do not correspond to messages in the `.dbx` file will be
+files. Subsequent invocations will only _update_ the output directory.
+Any `.eml` files that do not correspond to messages in the `.dbx` file will be
 treated as deleted messages and will be deleted from the
 disk. Furthermore, only new messages, that do not correspond to files
 on disk, will be extracted from the `.dbx` file.
