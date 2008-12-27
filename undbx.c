@@ -22,6 +22,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+# define DBX_VERSION PACKAGE_VERSION
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

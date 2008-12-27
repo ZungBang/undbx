@@ -4,9 +4,15 @@ Tool to extract e-mail messages from Outlook Express `.dbx` files.
 
 Copyright (C) 2008 Avi Rozen <avi.rozen@gmail.com>
 
+==DOWNLOAD==
+Windows binary and source code archives are available at
+http://code.google.com/p/undbx/downloads/list
+together with corresponding `md5sum` digests, which you can use to verify
+each archive's integrity.
+
 ==INSTALLATION==
-There's no installer or setup program. Simply extract `undbx.exe` from
-the distribution `.zip` file to some directory and run it from there.
+There's no installer or setup program. Simply extract the distribution `.zip`
+file to some folder. 
 
 ==USAGE==
 Run the following command in a command ("DOS") shell, to extract e-mail
@@ -16,6 +22,13 @@ sub-directories in `<OUTPUT-DIRECTORY>`:
 {{{
 undbx <DBX-DIRECTORY> <OUTPUT-DIRECTORY>
 }}}
+
+Alternatively, you may simply double-click `undbx-launcher.vbs`, which should
+have been extracted along side `undbx.exe`. You'll be presented twice with a
+standard folder selection dialog in order to select both the input and output
+folders, and then `undbx.exe` will be launched on your behalf inside a console
+window. 
+
 
 ==OPERATION==
 On first invocation all messages will be extracted as individual `.eml`
@@ -30,16 +43,28 @@ on disk, will be extracted from the `.dbx` file.
 
 ==SOURCE CODE==
 
+===SNAPSHOT===
+*UnDBX* current source code snapshot is available at
+http://code.google.com/p/undbx/downloads/list
+
 ===REPOSITORY===
-*UnDBX* source code can be downloaded and/or cloned from its public Git
+*UnDBX* development source code may be cloned from its public Git
 repository at
 http://github.com/ZungBang/undbx/tree
 
 ===COMPILING===
-I compile the code with the MinGW cross compiler on a Debian
-GNU/Linux box. To compile this on Microsoft Windows you'll need to
-install MinGW from http://www.mingw.org and tweak the
-`Makefile`. Please send a patch if you care enough. 
+*UnDBX* uses GNU Autoconf/Automake:
+
+{{{
+tar -xvzf undbx-0.12.tar.gz
+cd undbx-0.12
+./configure
+make
+make install
+}}}
+
+On Windows, this means that you need to install either
+[http://www.cygwin.com Cygwin] or [http://www.mingw.org MinGW].
 
 ==BUGS==
 Please report problems via the *UnDBX* issue tracking system:
@@ -68,4 +93,3 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
