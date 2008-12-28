@@ -38,8 +38,8 @@ treated as deleted messages and will be deleted from the
 disk. Furthermore, only new messages, that do not correspond to files
 on disk, will be extracted from the `.dbx` file.
 
-*UnDBX* was written to facilitate _fast_ incremental backup of `.dbx`
- files.  
+*UnDBX* was written to facilitate _fast_ incremental backup of `.dbx` files.  
+
 
 ==SOURCE CODE==
 
