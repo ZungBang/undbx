@@ -40,6 +40,9 @@ on disk, will be extracted from the `.dbx` file.
 
 *UnDBX* was written to facilitate _fast_ incremental backup of `.dbx` files.  
 
+*UnDBX* can open corrupted `.dbx` files and `.dbx` files that are
+larger than 2GB. Depending on how bad the damage is, *UnDBX* may or
+may not be able to extract messages from such files. YMMV. 
 
 ==SOURCE CODE==
 
@@ -56,8 +59,8 @@ http://github.com/ZungBang/undbx/tree
 *UnDBX* uses GNU Autoconf/Automake:
 
 {{{
-tar -xvzf undbx-0.12.tar.gz
-cd undbx-0.12
+tar -xvzf undbx-0.13.tar.gz
+cd undbx-0.13
 ./configure
 make
 make install
