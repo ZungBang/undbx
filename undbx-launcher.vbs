@@ -1,6 +1,6 @@
 '
 '   UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
-'   Copyright (C) 2008 Avi Rozen <avi.rozen@gmail.com>
+'   Copyright (C) 2008, 2009 Avi Rozen <avi.rozen@gmail.com>
 '
 '   DBX file format parsing code is based on
 '   DbxConv - a DBX to MBOX Converter.

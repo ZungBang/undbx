@@ -1,6 +1,6 @@
 /*
     UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
-    Copyright (C) 2008 Avi Rozen <avi.rozen@gmail.com>
+    Copyright (C) 2008, 2009 Avi Rozen <avi.rozen@gmail.com>
 
     DBX file format parsing code is based on
     DbxConv - a DBX to MBOX Converter.
@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include "dbxread.h"
 
 #define INDEX_POINTER 0xE4
@@ -39,7 +40,7 @@ static int _dbx_info_cmp(const dbx_info_t *ia, const dbx_info_t *ib)
   return res;
 }
 
-static char *_dbx_read_string(FILE *file, long offset)
+static char *_dbx_read_string(FILE *file, int offset)
 {
   char c[256];
   char *s = NULL;
@@ -61,7 +62,7 @@ static char *_dbx_read_string(FILE *file, long offset)
   return s;
 }
 
-static filetime_t _dbx_read_date(FILE *file, long offset)
+static filetime_t _dbx_read_date(FILE *file, int offset)
 {
   filetime_t filetime = 0;
   fseek(file, offset, SEEK_SET);
@@ -69,9 +70,9 @@ static filetime_t _dbx_read_date(FILE *file, long offset)
   return filetime;
 }
 
-static long _dbx_read_long(FILE *file, long offset, long value)
+static int _dbx_read_int(FILE *file, int offset, int value)
 {
-  long val = value;
+  int val = value;
   if (offset) {
     fseek(file, offset, SEEK_SET);
     fread(&val, 4, 1, file);
@@ -147,17 +148,17 @@ static void _dbx_read_info(dbx_t *dbx)
   
   for(i = 0; i < dbx->message_count; i++) {
     int j;
-    long size;
+    int size;
     int count = 0;
-    long index = dbx->info[i].index;
-    long offset = 0;
-    long pos = index + 12L;
+    int index = dbx->info[i].index;
+    int offset = 0;
+    int pos = index + 12;
 
-    fseek(dbx->file, index + 4L, SEEK_SET);
+    fseek(dbx->file, index + 4, SEEK_SET);
     fread(&size, 4, 1, dbx->file);
-    fseek(dbx->file, 2L, SEEK_CUR);
+    fseek(dbx->file, 2, SEEK_CUR);
     fread(&count, 1, 1, dbx->file);
-    fseek(dbx->file, 1L, SEEK_CUR);
+    fseek(dbx->file, 1, SEEK_CUR);
 
     dbx->info[i].valid = 0;
     
@@ -175,22 +176,22 @@ static void _dbx_read_info(dbx_t *dbx)
       /* dirt ugly code follows ... */
       switch (type & 0x7f) {
       case 0x00:
-        dbx->info[i].message_index = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].message_index = _dbx_read_int(dbx->file, offset, value);
         dbx->info[i].valid |= DBX_MASK_INDEX;
         break;
       case 0x01:
-        dbx->info[i].flags = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].flags = _dbx_read_int(dbx->file, offset, value);
         dbx->info[i].valid |= DBX_MASK_FLAGS;
         break;
       case 0x02:
         dbx->info[i].send_create_time = _dbx_read_date(dbx->file, offset);
         break;
       case 0x03:
-        dbx->info[i].body_lines = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].body_lines = _dbx_read_int(dbx->file, offset, value);
         dbx->info[i].valid |= DBX_MASK_BODYLINES;       
         break;
       case 0x04:
-        dbx->info[i].message_address = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].message_address = _dbx_read_int(dbx->file, offset, value);
         dbx->info[i].valid |= DBX_MASK_MSGADDR; 
         break;
       case 0x05:
@@ -224,11 +225,11 @@ static void _dbx_read_info(dbx_t *dbx)
         dbx->info[i].sender_address = _dbx_read_string(dbx->file, offset);
         break;
       case 0x10:
-        dbx->info[i].message_priority = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].message_priority = _dbx_read_int(dbx->file, offset, value);
         dbx->info[i].valid |= DBX_MASK_MSGPRIO; 
         break;
       case 0x11:
-        dbx->info[i].message_size = _dbx_read_long(dbx->file, offset, value);
+        dbx->info[i].message_size = _dbx_read_int(dbx->file, offset, value);
         dbx->info[i].valid |= DBX_MASK_MSGSIZE; 
         break;
       case 0x12:
@@ -254,22 +255,22 @@ static void _dbx_read_info(dbx_t *dbx)
 }
 
 
-static int _dbx_read_index(dbx_t *dbx, long pos)
+static int _dbx_read_index(dbx_t *dbx, int pos)
 {
   int i;
-  long next_table;
+  int next_table;
   char ptr_count = 0;
-  long index_count;
+  int index_count;
 
-  if (pos < 0 || pos >= dbx->file_size) {
+  if (pos <= 0 || dbx->file_size <= (unsigned long long)pos) {
     return 0;
   }
     
-  fseek(dbx->file, pos + 8L, SEEK_SET);
+  fseek(dbx->file, pos + 8, SEEK_SET);
   fread(&next_table, 4, 1, dbx->file);
-  fseek(dbx->file, 5L, SEEK_CUR);
+  fseek(dbx->file, 5, SEEK_CUR);
   fread(&ptr_count, 1, 1, dbx->file);
-  fseek(dbx->file, 2L, SEEK_CUR);
+  fseek(dbx->file, 2, SEEK_CUR);
   fread(&index_count, 4, 1, dbx->file);
   
   if (index_count > 0) {
@@ -305,8 +306,8 @@ static int _dbx_read_index(dbx_t *dbx, long pos)
 
 static int _dbx_read_indexes(dbx_t *dbx)
 {
-  long index_ptr;
-  long item_count;
+  int index_ptr;
+  int item_count;
         
   fseek(dbx->file, INDEX_POINTER, SEEK_SET);
   fread(&index_ptr, 4, 1, dbx->file);
@@ -329,10 +330,6 @@ static void _dbx_init(dbx_t *dbx)
   dbx->capacity = 0;
   dbx->info = NULL;
 
-  fseek(dbx->file, 0L, SEEK_END);
-  dbx->file_size = ftell(dbx->file);
-  fseek(dbx->file, 0L, SEEK_SET);
-  
   fread(signature, 4, 4, dbx->file);
 
   if (signature[0] == 0xFE12ADCF &&
@@ -375,7 +372,15 @@ dbx_t *dbx_open(char *filename)
       dbx = NULL;
     }
     else {
-      _dbx_init(dbx);
+      struct stat st;
+      if (stat(filename, &st) != 0) {
+        perror("dbx_open");
+        dbx = NULL;
+      }
+      else {  
+        dbx->file_size = st.st_size;
+        _dbx_init(dbx);
+      }
     }
   }
   
@@ -416,18 +421,18 @@ void dbx_close(dbx_t *dbx)
   }
 }
 
-char *dbx_message(dbx_t *dbx, int msg_number, long *psize)
+char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
 {
-  long index = 0;
+  int index = 0;
   int size = 0;
   char count = 0;
-  long msg_offset = 0;
-  long msg_offset_ptr = 0;
-  long value = 0;
+  int msg_offset = 0;
+  int msg_offset_ptr = 0;
+  int value = 0;
   unsigned char type = 0;
-  unsigned long total_size = 0;
+  unsigned int total_size = 0;
   short block_size = 0;
-  long i = 0;
+  int i = 0;
   char *buf = NULL;
  
   if (psize)
@@ -438,11 +443,11 @@ char *dbx_message(dbx_t *dbx, int msg_number, long *psize)
 
   index = dbx->info[msg_number].index;
 
-  fseek(dbx->file, index + 4L, SEEK_SET);
+  fseek(dbx->file, index + 4, SEEK_SET);
   fread(&size, 4, 1, dbx->file);
-  fseek(dbx->file, 2L, SEEK_CUR);
+  fseek(dbx->file, 2, SEEK_CUR);
   fread(&count, 1, 1, dbx->file);
-  fseek(dbx->file, 1L, SEEK_CUR);
+  fseek(dbx->file, 1, SEEK_CUR);
 
   for (i = 0; i < count; i++) {
     type = 0;
@@ -470,10 +475,10 @@ char *dbx_message(dbx_t *dbx, int msg_number, long *psize)
   total_size = 0;
   
   while (i != 0) {
-    fseek(dbx->file, i + 8L, SEEK_SET);
+    fseek(dbx->file, i + 8, SEEK_SET);
     block_size=0;
     fread(&block_size, 2, 1, dbx->file);
-    fseek(dbx->file, 2L, SEEK_CUR);
+    fseek(dbx->file, 2, SEEK_CUR);
     fread(&i, 4, 1, dbx->file);
     total_size += block_size;
     buf = realloc(buf, total_size + 1);

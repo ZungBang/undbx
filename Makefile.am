@@ -1,3 +1,4 @@
+AM_CFLAGS = -D_FILE_OFFSET_BITS=64 -Wall -Werror
 bin_PROGRAMS = undbx
 undbx_SOURCES = undbx.c dbxsys.c dbxread.c
 noinst_HEADERS =  dbxsys.h dbxread.h

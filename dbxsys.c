@@ -1,6 +1,6 @@
 /*
     UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
-    Copyright (C) 2008 Avi Rozen <avi.rozen@gmail.com>
+    Copyright (C) 2008, 2009 Avi Rozen <avi.rozen@gmail.com>
 
     DBX file format parsing code is based on
     DbxConv - a DBX to MBOX Converter.
@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include "dbxsys.h"
 
@@ -33,7 +34,6 @@
 
 #include <glob.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 
 static char **_sys_glob(char *pattern, int *num_files)
@@ -70,16 +70,6 @@ static int _sys_chdir(char *dir)
 static char *_sys_getcwd(void)
 {
   return getcwd(NULL, 0);
-}
-
-static long _sys_filesize(char *path)
-{
-  struct stat buf;
-  int rc = stat(path, &buf);
-  if (rc != 0) {
-    return -1;
-  }
-  return buf.st_size;
 }
 
 #endif /* __unix__ */
@@ -131,17 +121,6 @@ static int _sys_chdir(char *dir)
 static char *_sys_getcwd(void)
 {
   return _getcwd(NULL, 0);
-}
-
-static long _sys_filesize(char *path)
-{
-  BOOL rc;
-  WIN32_FILE_ATTRIBUTE_DATA file_info;
-
-  rc = GetFileAttributesEx(path, GetFileExInfoStandard, (void*) &file_info);
-  if (!rc)
-    return -1;
-  return (long) file_info.nFileSizeLow;
 }
 
 #endif /* _WIN32 */
@@ -219,11 +198,12 @@ char *sys_getcwd(void)
   return _sys_getcwd();
 }
 
-long sys_filesize(char *parent, char *filename)
+unsigned long long sys_filesize(char *parent, char *filename)
 {
   int rc = 0;
-  long size = 0;
+  unsigned long long size = 0;
   char *cwd = NULL;
+  struct stat buf;
 
   cwd = sys_getcwd();
   if (cwd == NULL)
@@ -235,7 +215,9 @@ long sys_filesize(char *parent, char *filename)
     return -1;
   }
   
-  size = _sys_filesize(filename);
+  rc = stat(filename, &buf);
+  size = (rc == 0)? buf.st_size:-1;
+
   sys_chdir(cwd);
   free(cwd);
 

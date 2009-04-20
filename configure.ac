@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.61)
+AC_PREREQ(2.63)
 AC_INIT([undbx], [0.13], [avi.rozen@gmail.com])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
@@ -10,6 +10,8 @@ AC_CONFIG_HEADER([config.h])
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
 
 # Checks for libraries.
 
