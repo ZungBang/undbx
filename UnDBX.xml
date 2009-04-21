@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XML_DIZ_INFO>
+	<MASTER_PAD_VERSION_INFO>
+		<MASTER_PAD_VERSION>3.01</MASTER_PAD_VERSION>
+		<MASTER_PAD_EDITOR>GNU Emacs 22.3.1</MASTER_PAD_EDITOR>
+	</MASTER_PAD_VERSION_INFO>
+	<Company_Info>
+		<Company_Name>Machine Cycle</Company_Name>
+		<Address_1/>
+		<Address_2/>
+		<City_Town>Jerusalem</City_Town>
+		<State_Province/>
+		<Zip_Postal_Code/>
+		<Country>Israel</Country>
+		<Company_WebSite_URL>http://machine-cycle.blogspot.com</Company_WebSite_URL>
+		<Contact_Info>
+			<Author_First_Name>Avi</Author_First_Name>
+			<Author_Last_Name>Rozen</Author_Last_Name>
+			<Author_Email>zungbang+undbx@gmail.com</Author_Email>
+			<Contact_First_Name>Avi</Contact_First_Name>
+			<Contact_Last_Name>Rozen</Contact_Last_Name>
+			<Contact_Email>zungbang+undbx@gmail.com</Contact_Email>
+		</Contact_Info>
+		<Support_Info>
+			<Sales_Email>zungbang+undbx@gmail.com</Sales_Email>
+			<Support_Email>zungbang+undbx@gmail.com</Support_Email>
+			<General_Email>zungbang+undbx@gmail.com</General_Email>
+			<Sales_Phone/>
+			<Support_Phone/>
+			<General_Phone/>
+			<Fax_Phone/>
+		</Support_Info>
+	</Company_Info>
+	<Program_Info>
+		<Program_Name>UnDBX</Program_Name>
+		<Program_Version>0.13</Program_Version>
+		<Program_Release_Month>04</Program_Release_Month>
+		<Program_Release_Day>21</Program_Release_Day>
+		<Program_Release_Year>2009</Program_Release_Year>
+		<Program_Cost_Dollars/>
+		<Program_Cost_Other_Code/>
+		<Program_Cost_Other/>
+		<Program_Type>Freeware</Program_Type>
+		<Program_Release_Status>Beta</Program_Release_Status>
+		<Program_Install_Support>No Install Support</Program_Install_Support>
+		<Program_OS_Support>WinXP</Program_OS_Support>
+		<Program_Language>English</Program_Language>
+		<Program_Change_Info/>
+		<Program_Specific_Category/>
+		<Program_Category_Class>Communications::Other E-Mail Tools</Program_Category_Class>
+		<Program_System_Requirements/>
+		<File_Info>
+			<File_Size_Bytes>32378</File_Size_Bytes>
+			<File_Size_K>31.6</File_Size_K>
+			<File_Size_MB>0.03</File_Size_MB>
+		</File_Info>
+		<Expire_Info>
+			<Has_Expire_Info>N</Has_Expire_Info>
+			<Expire_Count/>
+			<Expire_Based_On>Days</Expire_Based_On>
+			<Expire_Other_Info/>
+			<Expire_Month/>
+			<Expire_Day/>
+			<Expire_Year/>
+		</Expire_Info>
+	</Program_Info>
+	<Program_Descriptions>
+		<English>
+			<Keywords>DBX, EML, E-Mail, Outlook Express, extract, convert, tool, freeware, free, GPL</Keywords>
+			<Char_Desc_45>Outlook Express .dbx message extraction tool</Char_Desc_45>
+			<Char_Desc_80>Tool to extract e-mail messages from Outlook Express .dbx files.</Char_Desc_80>
+			<Char_Desc_250>Tool to extract e-mail messages from Outlook Express .dbx files.</Char_Desc_250>
+			<Char_Desc_450>Tool to extract e-mail messages from Outlook Express .dbx files. On first invocation all messages will be extracted as individual .eml files. Subsequent invocations will only update the output directory: .eml files that do not correspond to messages in the .dbx file will be treated as deleted messages and will be deleted from the disk. Furthermore, only new messages, that do not correspond to files on disk, will be extracted from the .dbx file.</Char_Desc_450>
+			<Char_Desc_2000>Tool to extract e-mail messages from Outlook Express .dbx files. On first invocation all messages will be extracted as individual .eml files. Subsequent invocations will only update the output directory: .eml files that do not correspond to messages in the .dbx file will be treated as deleted messages and will be deleted from the disk. Furthermore, only new messages, that do not correspond to files on disk, will be extracted from the .dbx file. UnDBX was written to facilitate fast incremental backup of .dbx files. UnDBX can open corrupted .dbx files and .dbx files that are larger than 2GB, but, depending on how bad the damage is, it may not be able to extract messages from such files.</Char_Desc_2000>
+		</English>
+	</Program_Descriptions>
+	<Web_Info>
+		<Application_URLs>
+			<Application_Info_URL>http://code.google.com/p/undbx/</Application_Info_URL>
+			<Application_Order_URL/>
+			<Application_Screenshot_URL>http://support.microsoft.com/library/images/support/en-us/HPlogo_OutlookExpress.gif</Application_Screenshot_URL>
+			<Application_Icon_URL>http://support.microsoft.com/library/images/support/en-us/HPlogo_OutlookExpress.gif</Application_Icon_URL>
+			<Application_XML_File_URL>http://zungbang.googlepages.com/UnDBX.xml</Application_XML_File_URL>
+		</Application_URLs>
+		<Download_URLs>
+			<Primary_Download_URL>http://undbx.googlecode.com/files/undbx-0.13.zip</Primary_Download_URL>
+			<Secondary_Download_URL/>
+			<Additional_Download_URL_1/>
+			<Additional_Download_URL_2/>
+		</Download_URLs>
+	</Web_Info>
+	<Permissions>
+		<Distribution_Permissions>GPLv3
+http://www.gnu.org/licenses/</Distribution_Permissions>
+		<EULA>GPLv3
+http://www.gnu.org/licenses</EULA>
+	</Permissions>
+	<ASP>
+		<ASP_FORM>N</ASP_FORM>
+		<ASP_Member/>
+		<ASP_Member_Number/>
+	</ASP>
+</XML_DIZ_INFO>
