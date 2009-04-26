@@ -40,6 +40,38 @@ static int _dbx_info_cmp(const dbx_info_t *ia, const dbx_info_t *ib)
   return res;
 }
 
+static void _dbx_fread_long_long(long long *value, FILE *file)
+{
+  long long llw = 0;
+  llw =  (long long) (fgetc(file) & 0xFF);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x08);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x10);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x18);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x20);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x28);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x30);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x38);  
+  *value = llw;
+}
+
+static void _dbx_fread_int(int *value, FILE *file)
+{
+  int dw = 0;
+  dw =  (int) (fgetc(file) & 0xFF);
+  dw |= ((int) (fgetc(file) & 0xFF) << 0x08);
+  dw |= ((int) (fgetc(file) & 0xFF) << 0x10);
+  dw |= ((int) (fgetc(file) & 0xFF) << 0x18);
+  *value = dw;
+}
+
+static void _dbx_fread_short(short *value, FILE *file)
+{
+  short w = 0;
+  w =  (short) (fgetc(file) & 0xFF);
+  w |= ((short) (fgetc(file) & 0xFF) << 0x08);
+  *value = w;
+}
+
 static char *_dbx_read_string(FILE *file, int offset)
 {
   char c[256];
@@ -66,7 +98,7 @@ static filetime_t _dbx_read_date(FILE *file, int offset)
 {
   filetime_t filetime = 0;
   fseek(file, offset, SEEK_SET);
-  fread(&filetime, 8, 1, file);
+  _dbx_fread_long_long((long long *)&filetime, file);
   return filetime;
 }
 
@@ -75,7 +107,7 @@ static int _dbx_read_int(FILE *file, int offset, int value)
   int val = value;
   if (offset) {
     fseek(file, offset, SEEK_SET);
-    fread(&val, 4, 1, file);
+    _dbx_fread_int(&val, file);
   }
   return val;
 }
@@ -155,11 +187,10 @@ static void _dbx_read_info(dbx_t *dbx)
     int pos = index + 12;
 
     fseek(dbx->file, index + 4, SEEK_SET);
-    fread(&size, 4, 1, dbx->file);
-    fseek(dbx->file, 2, SEEK_CUR);
-    fread(&count, 1, 1, dbx->file);
-    fseek(dbx->file, 1, SEEK_CUR);
-
+    _dbx_fread_int(&size, dbx->file);
+    _dbx_fread_int(&count, dbx->file);
+    count = (count & 0x00FF0000) >> 16;
+    
     dbx->info[i].valid = 0;
     
     for (j = 0; j < count; j++) {
@@ -167,8 +198,9 @@ static void _dbx_read_info(dbx_t *dbx)
       unsigned int value = 0;
 
       fseek(dbx->file, pos, SEEK_SET);
-      fread(&type, 1, 1, dbx->file);
-      fread(&value, 3, 1, dbx->file);
+      _dbx_fread_int((int*)&value, dbx->file);
+      type = value & 0xFF;
+      value = (value >> 8) & 0xFFFFFF;
 
       /* msb means direct storage */
       offset = (type & 0x80)? 0:(index + 12 + 4 * count + value);
@@ -267,11 +299,11 @@ static int _dbx_read_index(dbx_t *dbx, int pos)
   }
     
   fseek(dbx->file, pos + 8, SEEK_SET);
-  fread(&next_table, 4, 1, dbx->file);
+  _dbx_fread_int(&next_table, dbx->file);
   fseek(dbx->file, 5, SEEK_CUR);
   fread(&ptr_count, 1, 1, dbx->file);
   fseek(dbx->file, 2, SEEK_CUR);
-  fread(&index_count, 4, 1, dbx->file);
+  _dbx_fread_int(&index_count, dbx->file);
   
   if (index_count > 0) {
     if (!_dbx_read_index(dbx, next_table))
@@ -285,9 +317,9 @@ static int _dbx_read_index(dbx_t *dbx, int pos)
   for (i = 0; i < ptr_count; i++) {
     int index_ptr;
     fseek(dbx->file, pos, SEEK_SET);
-    fread(&index_ptr, 4, 1, dbx->file);
-    fread(&next_table, 4, 1, dbx->file);
-    fread(&index_count, 4, 1, dbx->file);
+    _dbx_fread_int(&index_ptr, dbx->file);
+    _dbx_fread_int(&next_table, dbx->file);
+    _dbx_fread_int(&index_count, dbx->file);
 
     memset(dbx->info + dbx->message_count, 0, sizeof(dbx_info_t));
     dbx->info[dbx->message_count].index = index_ptr;
@@ -310,10 +342,10 @@ static int _dbx_read_indexes(dbx_t *dbx)
   int item_count;
         
   fseek(dbx->file, INDEX_POINTER, SEEK_SET);
-  fread(&index_ptr, 4, 1, dbx->file);
+  _dbx_fread_int(&index_ptr, dbx->file);
 
   fseek(dbx->file, ITEM_COUNT, SEEK_SET);
-  fread(&item_count, 4, 1, dbx->file);
+  _dbx_fread_int(&item_count, dbx->file);
 
   if (item_count > 0) 
     return _dbx_read_index(dbx, index_ptr);
@@ -324,13 +356,15 @@ static int _dbx_read_indexes(dbx_t *dbx)
 
 static void _dbx_init(dbx_t *dbx)
 {
+  int i = 0;
   unsigned int signature[4];
 
   dbx->message_count = 0;
   dbx->capacity = 0;
   dbx->info = NULL;
 
-  fread(signature, 4, 4, dbx->file);
+  for(i = 0; i < 4; i++)
+    _dbx_fread_int((int *)(signature + i), dbx->file);
 
   if (signature[0] == 0xFE12ADCF &&
       signature[1] == 0x6F74FDC5 &&
@@ -444,17 +478,16 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
   index = dbx->info[msg_number].index;
 
   fseek(dbx->file, index + 4, SEEK_SET);
-  fread(&size, 4, 1, dbx->file);
+  _dbx_fread_int(&size, dbx->file);
   fseek(dbx->file, 2, SEEK_CUR);
   fread(&count, 1, 1, dbx->file);
   fseek(dbx->file, 1, SEEK_CUR);
 
   for (i = 0; i < count; i++) {
-    type = 0;
-    fread(&type, 1, 1, dbx->file);
-    value=0;
-    fread(&value, 3, 1, dbx->file);
-                
+    _dbx_fread_int((int *)&value, dbx->file);
+    type = value & 0xFF;
+    value = (value >> 8) & 0xFFFFFF;                
+
     if (type == 0x84) {
       msg_offset = value;
       break;
@@ -467,7 +500,7 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
         
   if (msg_offset == 0 && msg_offset_ptr != 0) {
     fseek(dbx->file, msg_offset_ptr, SEEK_SET);
-    fread(&msg_offset, 4, 1, dbx->file);
+    _dbx_fread_int(&msg_offset, dbx->file);
   }
 
   buf = NULL;
@@ -477,9 +510,9 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
   while (i != 0) {
     fseek(dbx->file, i + 8, SEEK_SET);
     block_size=0;
-    fread(&block_size, 2, 1, dbx->file);
+    _dbx_fread_short(&block_size, dbx->file);
     fseek(dbx->file, 2, SEEK_CUR);
-    fread(&i, 4, 1, dbx->file);
+    _dbx_fread_int(&i, dbx->file);
     total_size += block_size;
     buf = realloc(buf, total_size + 1);
     fread(buf + total_size - block_size, block_size, 1, dbx->file); 
