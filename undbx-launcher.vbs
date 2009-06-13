@@ -53,7 +53,12 @@ Sub RunUndbx(strUndbxExe)
 
     Dim strInFolder, strOutFolder
     Dim objApp
-    
+
+    If isProcessRunning("msimn.exe") Then
+        Wscript.Echo "Please exit Outlook Express before launching UnDBX"
+        Exit Sub
+    End If
+
     strInFolder = GetFolder("Please select .dbx INPUT folder:")
     If strInFolder = "" Then
         Exit Sub
@@ -70,6 +75,31 @@ Sub RunUndbx(strUndbxExe)
     Set objApp = Nothing
 
 End Sub 
+
+
+Function isProcessRunning(strExe)
+
+    '
+    ' Check if the specified executable is running
+    '
+    
+    Dim strComputer
+    Dim objWMIService
+    Dim colProcesses
+    
+    strComputer = "."
+    Set objWMIService = GetObject("winmgmts:" _
+                                  & "{impersonationLevel=impersonate}!\\" & strComputer & "\root\cimv2")
+
+    Set colProcesses = objWMIService.ExecQuery _
+        ("Select * from Win32_Process Where Name = '"&strExe&"'")
+
+    isProcessRunning = colProcesses.Count > 0
+
+    Set colProcesses = Nothing
+    Set objWMIService = Nothing
+
+End Function
 
 
 Function GetFolder(strPrompt)
