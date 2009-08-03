@@ -33,21 +33,22 @@
 
 win32_host=${1:-i586-mingw32msvc}
 basedir=${0/%dist-win32.sh}
+./autogen.sh
+make distclean
 configure="$basedir""configure"
 distdir=$(eval "$configure --version" | head -1 | sed s/\ configure\ /-/)
-make distclean
 rm -rf ${distdir} ${distdir}.zip* ${distdir}.tar.gz*
 mkdir ${distdir} 
 win32_install_base=`cd ${distdir} && pwd | sed -e 's,^[^:\\/]:[\\/],/,'` \
     && ${configure} --host=$win32_host --prefix="$win32_install_base" LDFLAGS=-s CFLAGS=-O3 \
     && make dist-gzip \
-    && md5sum ${distdir}.tar.gz > ${distdir}.tar.gz.md5sum \
+    && sha1sum ${distdir}.tar.gz > ${distdir}.tar.gz.sha1sum \
     && make \
     && make install \
     && find ${distdir} -type f -exec mv -f {} ${distdir} \; \
     && find ${distdir} -depth -type d -empty -exec rmdir -v {} \; \
     && cp "$basedir"{README,COPYING} ${distdir} \
     && zip -rq ${distdir}.zip ${distdir} \
-    && md5sum ${distdir}.zip > ${distdir}.zip.md5sum \
+    && sha1sum ${distdir}.zip > ${distdir}.zip.sha1sum \
     && rm -rf ${distdir} \
     && make distclean 
