@@ -32,7 +32,6 @@
 #include <string.h>
 #include <errno.h>
 #include "dbxread.h"
-#include "dbxsys.h"
 
 typedef enum { DBX_SAVE_NOOP, DBX_SAVE_OK, DBX_SAVE_ERROR } dbx_save_status_t;
 
@@ -81,6 +80,38 @@ static dbx_save_status_t _save_message(char *dir, char *filename, char *message,
   return DBX_SAVE_OK;
 }
 
+
+static void _set_message_date(dbx_info_t *info, char *dir)
+{
+  char *cwd = NULL;
+  int rc = 0;
+  filetime_t filetime = 0;
+
+  cwd = sys_getcwd();
+  if (cwd == NULL) {
+    perror("_set_message_date (sys_getcwd)");
+    return;
+  }
+  
+  rc = sys_chdir(dir);
+  if (rc != 0) {
+    perror("_set_message_date (sys_chdir)");
+    return;
+  }
+
+  if (info->send_create_time && info->receive_create_time)
+    filetime = info->send_create_time < info->receive_create_time ?
+      info->send_create_time : info->receive_create_time;
+  else
+    filetime = info->send_create_time? info->send_create_time : info->receive_create_time;
+
+  sys_set_filetime(info->filename, filetime);
+
+  sys_chdir(cwd);
+  free(cwd);
+  cwd = NULL;
+}
+
 static dbx_save_status_t _maybe_save_message(dbx_t *dbx, int imessage, char *dir, int force)
 {
   dbx_save_status_t status = DBX_SAVE_NOOP;
@@ -102,6 +133,7 @@ static dbx_save_status_t _maybe_save_message(dbx_t *dbx, int imessage, char *dir
         fflush(stdout);
         break;
       case DBX_SAVE_OK:
+        _set_message_date(info, dir);
         printf("%5.1f%%     OK: %s\n", 100 * (imessage + 1.0)/dbx->message_count, info->filename);
         fflush(stdout);
         break;

@@ -29,12 +29,11 @@
 extern "C" {
 #endif
 
+#include "dbxsys.h"
+  
 #define DBX_MAX_FILENAME 128 
 
   typedef int (*dbx_cmpfunc_t)(const void *, const void *);
-
-  char **sys_glob(char *parent, char *pattern, int *num_files);
-  typedef unsigned long long filetime_t;
 
   typedef enum {
     DBX_TYPE_UNKNOWN,

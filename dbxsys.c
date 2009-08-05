@@ -30,11 +30,15 @@
 
 #include "dbxsys.h"
 
+#define JAN1ST1970 0x19DB1DED53E8000ULL
+#define NSPERSEC 1000000000ULL
+
 #ifdef __unix__
 
 #include <glob.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <utime.h>
 
 static char **_sys_glob(char *pattern, int *num_files)
 {
@@ -72,12 +76,22 @@ static char *_sys_getcwd(void)
   return getcwd(NULL, 0);
 }
 
+static int _sys_set_filetime(char *filename, filetime_t filetime)
+{
+  struct utimbuf timbuf;
+  filetime_t t = (filetime - JAN1ST1970) / ((unsigned long long) (NSPERSEC / 100));
+  timbuf.actime = (time_t)t;
+  timbuf.modtime = (time_t)t;
+  return utime(filename, &timbuf);
+}
+
 #endif /* __unix__ */
 
 #ifdef _WIN32
 
 #include <windows.h>
 #include <direct.h>
+#include <sys/utime.h>
 
 static char **_sys_glob(char *pattern, int *num_files)
 {
@@ -121,6 +135,15 @@ static int _sys_chdir(char *dir)
 static char *_sys_getcwd(void)
 {
   return _getcwd(NULL, 0);
+}
+
+static int _sys_set_filetime(char *filename, filetime_t filetime)
+{
+  struct _utimbuf timbuf;
+  filetime_t t = (filetime - JAN1ST1970) / ((unsigned long long) (NSPERSEC / 100));
+  timbuf.actime = (time_t)t;
+  timbuf.modtime = (time_t)t;
+  return _utime(filename, &timbuf);
 }
 
 #endif /* _WIN32 */
@@ -244,4 +267,9 @@ int sys_delete(char *parent, char *filename)
   free(cwd);
 
   return rc;
+}
+
+int sys_set_filetime(char *filename, filetime_t filetime)
+{
+  return _sys_set_filetime(filename, filetime);
 }

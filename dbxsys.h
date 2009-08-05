@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+  typedef unsigned long long filetime_t;
+  
   char **sys_glob(char *parent, char *pattern, int *num_files);
   void sys_glob_free(char **pglob);
   int sys_mkdir(char *parent, char *dir);
@@ -36,6 +38,7 @@ extern "C" {
   char *sys_getcwd(void);
   unsigned long long sys_filesize(char *parent, char *filename);
   int sys_delete(char *parent, char *filename);
+  int sys_set_filetime(char *filename, filetime_t filetime);
   
 #ifdef __cplusplus
 };
