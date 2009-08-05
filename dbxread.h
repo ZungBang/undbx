@@ -81,6 +81,7 @@ extern "C" {
   } dbx_info_t;
 
   typedef struct dbx_s {
+    char *filename;
     FILE *file;
     unsigned long long file_size;
     dbx_type_t type;

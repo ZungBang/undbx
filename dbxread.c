@@ -411,7 +411,8 @@ dbx_t *dbx_open(char *filename)
         perror("dbx_open");
         dbx = NULL;
       }
-      else {  
+      else {
+        dbx->filename = strdup(filename);
         dbx->file_size = st.st_size;
         _dbx_init(dbx);
       }
@@ -450,7 +451,7 @@ void dbx_close(dbx_t *dbx)
     
     free(dbx->info);
     dbx->info = NULL;
-
+    free(dbx->filename);
     free(dbx);
   }
 }
