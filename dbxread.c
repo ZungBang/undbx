@@ -122,9 +122,11 @@ static void _dbx_set_filename(dbx_info_t *info)
   static const char * const invalid_characters = "\\/?\"<>*|:";
   static const char valid_char = '_';
 
-  snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix) - 1, "%s_%s_%s",
+  snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%.15s_%.15s_%.15s_%.15s_%s",
            info->sender_name? info->sender_name:"_(no_name)_",
            info->sender_address? info->sender_address:"_(no_address)_",
+           info->receiver_name? info->receiver_name:"_(no_name)_",
+           info->receiver_address? info->receiver_address:"_(no_address)_",
            info->subject? info->subject:"(no_subject)");
   
   sprintf(suffix, ".%08X.%08X.eml.00000000",
