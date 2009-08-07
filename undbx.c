@@ -297,10 +297,19 @@ int main(int argc, char *argv[])
   if (argc != 3)
     _usage(argv[0]);
 
-  dbx_dir = argv[1];
-  out_dir = argv[2];
+  dbx_dir = strdup(argv[1]);
+  out_dir = strdup(argv[2]);
 
   dbx_files = sys_glob(dbx_dir, "*.dbx", &num_dbx_files);
+  /* assume single file if none found */
+  if (num_dbx_files == 0) {
+    sys_glob_free(dbx_files);
+    dbx_files = (char **)calloc(2, sizeof(char *));
+    dbx_files[0] = strdup(sys_basename(argv[1]));
+    num_dbx_files = 1;
+    free(dbx_dir);
+    dbx_dir = strdup(sys_dirname(argv[1]));
+  }
 
   for(n = 0; n < num_dbx_files; n++) {
     if (_undbx(dbx_dir, out_dir, dbx_files[n]))
@@ -308,6 +317,8 @@ int main(int argc, char *argv[])
   }
 
   sys_glob_free(dbx_files);
+  free(out_dir);
+  free(dbx_dir);
 
   printf("Extracted %d out of %d DBX files.\n", n - fail, n);
   

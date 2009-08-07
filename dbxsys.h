@@ -39,6 +39,8 @@ extern "C" {
   unsigned long long sys_filesize(char *parent, char *filename);
   int sys_delete(char *parent, char *filename);
   int sys_set_filetime(char *filename, filetime_t filetime);
+  char *sys_basename(char *path);
+  char *sys_dirname(char *path);
   
 #ifdef __cplusplus
 };

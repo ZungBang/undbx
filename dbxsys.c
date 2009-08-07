@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <libgen.h>
 
 #include "dbxsys.h"
 
@@ -272,4 +273,14 @@ int sys_delete(char *parent, char *filename)
 int sys_set_filetime(char *filename, filetime_t filetime)
 {
   return _sys_set_filetime(filename, filetime);
+}
+
+char *sys_basename(char *path)
+{
+  return basename(path);
+}
+
+char *sys_dirname(char *path)
+{
+  return dirname(path);
 }
