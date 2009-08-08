@@ -298,7 +298,7 @@ static char **_get_files(char **dir, int *num_files)
 
 static void _usage(char *prog)
 {
-  fprintf(stderr, "Usage: %s <DBX-DIRECTORY> <OUTPUT-DIRECTORY>\n", prog);
+  fprintf(stderr, "Usage: %s <DBX-DIRECTORY | DBX-FILE> [<OUTPUT-DIRECTORY>]\n", prog);
   exit(EXIT_FAILURE);
 }
 
@@ -313,11 +313,15 @@ int main(int argc, char *argv[])
 
   printf("UnDBX v" DBX_VERSION " (" __DATE__ ")\n");
   
-  if (argc != 3)
+  if (argc < 2 || argc > 3)
     _usage(argv[0]);
 
   dbx_dir = strdup(argv[1]);
-  out_dir = strdup(argv[2]);
+  
+  if (argc == 3)
+    out_dir = argv[2];
+  else
+    out_dir = ".";
 
   dbx_files = _get_files(&dbx_dir, &num_dbx_files);
   for(n = 0; n < num_dbx_files; n++) {
@@ -326,7 +330,6 @@ int main(int argc, char *argv[])
   }
 
   sys_glob_free(dbx_files);
-  free(out_dir);
   free(dbx_dir);
 
   printf("Extracted %d out of %d DBX files.\n", n - fail, n);
