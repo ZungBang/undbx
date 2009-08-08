@@ -277,6 +277,25 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file)
   return 0;
 }
 
+static char **_get_files(char **dir, int *num_files)
+{
+  char **files = NULL;
+  int l = strlen(*dir);
+  
+  files = sys_glob(*dir, "*.dbx", num_files);
+  if (*num_files == 0 && l > 4 && strcasecmp(*dir + l - 4, ".dbx") == 0) {
+    char *dirname = NULL;
+    sys_glob_free(files);
+    files = (char **)calloc(2, sizeof(char *));
+    files[0] = strdup(sys_basename(*dir));
+    *num_files = 1;
+    dirname = strdup(sys_dirname(*dir));
+    free(*dir);
+    *dir = dirname;
+  }
+  return files;
+}
+
 static void _usage(char *prog)
 {
   fprintf(stderr, "Usage: %s <DBX-DIRECTORY> <OUTPUT-DIRECTORY>\n", prog);
@@ -300,17 +319,7 @@ int main(int argc, char *argv[])
   dbx_dir = strdup(argv[1]);
   out_dir = strdup(argv[2]);
 
-  dbx_files = sys_glob(dbx_dir, "*.dbx", &num_dbx_files);
-  /* assume single file if none found */
-  if (num_dbx_files == 0) {
-    sys_glob_free(dbx_files);
-    dbx_files = (char **)calloc(2, sizeof(char *));
-    dbx_files[0] = strdup(sys_basename(argv[1]));
-    num_dbx_files = 1;
-    free(dbx_dir);
-    dbx_dir = strdup(sys_dirname(argv[1]));
-  }
-
+  dbx_files = _get_files(&dbx_dir, &num_dbx_files);
   for(n = 0; n < num_dbx_files; n++) {
     if (_undbx(dbx_dir, out_dir, dbx_files[n]))
       fail++;
