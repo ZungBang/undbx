@@ -33,16 +33,20 @@
 
 win32_host=${1:-i586-mingw32msvc}
 basedir=${0/%dist-win32.sh}
-./autogen.sh
+cd "$basedir"
+[ -e ./autogen.sh ] && ./autogen.sh
+cd -
 make distclean
 configure="$basedir""configure"
 distdir=$(eval "$configure --version" | head -1 | sed s/\ configure\ /-/)
 rm -rf ${distdir} ${distdir}.zip* ${distdir}.tar.gz*
-which wikir > /dev/null && wikir "$basedir"README.rst > "$basedir"README.wiki
+[ -f "$basedir"README.rst ] \
+    && cp -f "$basedir"README.rst "$basedir"README \
+    && which wikir > /dev/null \
+    && wikir "$basedir"README.rst > README.wiki 
 mkdir ${distdir} 
 win32_install_base=`cd ${distdir} && pwd | sed -e 's,^[^:\\/]:[\\/],/,'` \
     && ${configure} --host=$win32_host --prefix="$win32_install_base" LDFLAGS=-s CFLAGS=-O3 \
-    && cp -f "$basedir"README.rst "$basedir"README \
     && make dist-gzip \
     && sha1sum ${distdir}.tar.gz > ${distdir}.tar.gz.sha1sum \
     && make \
