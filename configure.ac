@@ -23,6 +23,9 @@ AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
 AC_C_CONST
 AC_TYPE_SIZE_T
 
+# large file support
+AC_SYS_LARGEFILE
+
 # Checks for library functions.
 AC_FUNC_REALLOC
 AC_FUNC_STAT
