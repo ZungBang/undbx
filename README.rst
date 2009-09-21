@@ -26,19 +26,35 @@ There's no installer or setup program. Simply extract the distribution
 USAGE
 -----
 
-Run the following command in a command ("DOS") shell, to extract
-e-mail messages from all the ``.dbx`` files in ``<DBX-DIRECTORY>`` to
+Just double-click either ``undbx`` or ``undbx-launcher`` in the folder
+where the distribution ``.zip`` file was extracted to.
+
+You'll be presented twice with a standard folder selection dialog in
+order to select both the input and output folders, and then **UnDBX**
+will be launched to extract the ``.dbx`` files.
+
+The input folder holds all the ``.dbx`` files to be processed. This
+will typically be your Outlook Express message store folder (please
+consult Microsoft Knowledge Base article `Q270670`_ for an explantion
+on how to find the location of this folder).
+
+The output folder is where the e-mail messeges will be extracted
+to. **UnDBX** will create a sub-folder under the output directory for
+each ``.dbx`` file found in the input directory, to hold the extracted
+messages.
+
+.. _Q270670: http://support.microsoft.com/kb/270670
+
+ADAVNACED USAGE
+---------------
+
+Run the following command in a command shell, to extract e-mail
+messages from all the ``.dbx`` files in ``<DBX-DIRECTORY>`` to
 corresponding sub-directories in ``<OUTPUT-DIRECTORY>``:
 
 ::
 
     undbx <DBX-DIRECTORY> <OUTPUT-DIRECTORY>
-
-Alternatively, you may simply double-click ``undbx-launcher.vbs``,
-which should have been extracted along side ``undbx.exe``. You'll be
-presented twice with a standard folder selection dialog in order to
-select both the input and output folders, and then ``undbx.exe`` will
-be launched on your behalf inside a console window.
 
 You can also specify a single ``.dbx`` file to extract instead of a
 directory.
@@ -63,6 +79,7 @@ correspond to files on disk, will be extracted from the ``.dbx`` file.
 are larger than 2GB. Depending on how bad the damage is, **UnDBX** may
 or may not be able to extract messages from such files. YMMV.
 
+
 SOURCE CODE
 -----------
 
@@ -85,14 +102,22 @@ COMPILING
 
 ::
 
-    tar -xvzf undbx-0.13.tar.gz
-    cd undbx-0.13
+    tar -xvzf undbx-0.14.tar.gz
+    cd undbx-0.14
     ./configure
     make
     make install
 
 On Windows, this means that you need to install either `Cygwin`_ or
 `MinGW`_.
+
+If you got the source code from the source repository, you'll need to
+generate the ``configure`` script before building **UnDBX**, by
+running
+
+::
+    ./autogen.sh
+
 
 .. _Cygwin: http://www.cygwin.com
 .. _MinGW: http://www.mingw.org
