@@ -296,11 +296,21 @@ static char **_get_files(char **dir, int *num_files)
   return files;
 }
 
+#ifndef _WIN32
 static void _usage(char *prog)
 {
   fprintf(stderr, "Usage: %s <DBX-DIRECTORY | DBX-FILE> [<OUTPUT-DIRECTORY>]\n", prog);
   exit(EXIT_FAILURE);
 }
+#else
+static void _gui(char *prog)
+{
+  char cmd[256];
+  snprintf(cmd, 256, "cscript //Nologo %s/undbx-launcher.vbs", sys_dirname(prog));
+  system(cmd);
+  exit(EXIT_SUCCESS);
+}
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -313,8 +323,13 @@ int main(int argc, char *argv[])
 
   printf("UnDBX v" DBX_VERSION " (" __DATE__ ")\n");
   
-  if (argc < 2 || argc > 3)
+  if (argc < 2 || argc > 3) {
+#ifndef _WIN32
     _usage(argv[0]);
+#else
+    _gui(argv[0]);
+#endif
+  }
 
   dbx_dir = strdup(argv[1]);
   
