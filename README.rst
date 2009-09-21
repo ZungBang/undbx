@@ -116,6 +116,7 @@ generate the ``configure`` script before building **UnDBX**, by
 running
 
 ::
+
     ./autogen.sh
 
 
