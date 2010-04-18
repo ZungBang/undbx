@@ -1,6 +1,6 @@
 /*
     UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
-    Copyright (C) 2008, 2009 Avi Rozen <avi.rozen@gmail.com>
+    Copyright (C) 2008-2010 Avi Rozen <avi.rozen@gmail.com>
 
     DBX file format parsing code is based on
     DbxConv - a DBX to MBOX Converter.
@@ -24,6 +24,8 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
+#else
+# define WORDS_BIGENDIAN 1 /* safe default here (see sys_fread_* funcs) */
 #endif
 
 #include <stdlib.h>
@@ -81,12 +83,11 @@ static char *_sys_getcwd(void)
   return getcwd(NULL, 0);
 }
 
-static int _sys_set_filetime(char *filename, filetime_t filetime)
+static int _sys_set_time(char *filename, time_t timestamp)
 {
   struct utimbuf timbuf;
-  filetime_t t = (filetime - JAN1ST1970) / ((unsigned long long) (NSPERSEC / 100));
-  timbuf.actime = (time_t)t;
-  timbuf.modtime = (time_t)t;
+  timbuf.actime = timestamp;
+  timbuf.modtime = timestamp;
   return utime(filename, &timbuf);
 }
 
@@ -142,12 +143,11 @@ static char *_sys_getcwd(void)
   return _getcwd(NULL, 0);
 }
 
-static int _sys_set_filetime(char *filename, filetime_t filetime)
+static int _sys_set_time(char *filename, time_t timestamp)
 {
   struct _utimbuf timbuf;
-  filetime_t t = (filetime - JAN1ST1970) / ((unsigned long long) (NSPERSEC / 100));
-  timbuf.actime = (time_t)t;
-  timbuf.modtime = (time_t)t;
+  timbuf.actime = timestamp;
+  timbuf.modtime = timestamp;
   return _utime(filename, &timbuf);
 }
 
@@ -274,9 +274,15 @@ int sys_delete(char *parent, char *filename)
   return rc;
 }
 
+int sys_set_time(char *filename, time_t timestamp)
+{
+  return _sys_set_time(filename, timestamp);
+}
+
 int sys_set_filetime(char *filename, filetime_t filetime)
 {
-  return _sys_set_filetime(filename, filetime);
+  filetime_t t = (filetime - JAN1ST1970) / ((unsigned long long) (NSPERSEC / 100));
+  return sys_set_time(filename, (time_t)t);
 }
 
 char *sys_basename(char *path)
@@ -288,3 +294,51 @@ char *sys_dirname(char *path)
 {
   return dirname(path);
 }
+
+void sys_fread_long_long(long long *value, FILE *file)
+{
+#ifndef WORDS_BIGENDIAN
+  fread(value, 1, sizeof(long long), file);
+#else
+  /* the following code is endianness neutral */
+  long long llw = 0;
+  llw =  (long long) (fgetc(file) & 0xFF);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x08);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x10);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x18);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x20);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x28);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x30);
+  llw |= ((long long) (fgetc(file) & 0xFF) << 0x38);  
+  *value = llw;
+#endif
+}
+
+void sys_fread_int(int *value, FILE *file)
+{
+#ifndef WORDS_BIGENDIAN
+  fread(value, 1, sizeof(int), file);  
+#else
+  /* the following code is endianness neutral */
+  int dw = 0;
+  dw =  (int) (fgetc(file) & 0xFF);
+  dw |= ((int) (fgetc(file) & 0xFF) << 0x08);
+  dw |= ((int) (fgetc(file) & 0xFF) << 0x10);
+  dw |= ((int) (fgetc(file) & 0xFF) << 0x18);
+  *value = dw;
+#endif
+}
+
+void sys_fread_short(short *value, FILE *file)
+{
+#ifndef WORDS_BIGENDIAN
+  fread(value, 1, sizeof(short), file);  
+#else
+  /* the following code is endianness neutral */
+  short w = 0;
+  w =  (short) (fgetc(file) & 0xFF);
+  w |= ((short) (fgetc(file) & 0xFF) << 0x08);
+  *value = w;
+#endif
+}
+

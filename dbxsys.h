@@ -1,6 +1,6 @@
 /*
     UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
-    Copyright (C) 2008, 2009 Avi Rozen <avi.rozen@gmail.com>
+    Copyright (C) 2008-2010 Avi Rozen <avi.rozen@gmail.com>
 
     DBX file format parsing code is based on
     DbxConv - a DBX to MBOX Converter.
@@ -25,6 +25,9 @@
 #ifndef _DBX_SYS_H_
 #define _DBX_SYS_H_
 
+#include <stdio.h>
+#include <time.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,8 +42,12 @@ extern "C" {
   unsigned long long sys_filesize(char *parent, char *filename);
   int sys_delete(char *parent, char *filename);
   int sys_set_filetime(char *filename, filetime_t filetime);
+  int sys_set_time(char *filename, time_t timestamp);
   char *sys_basename(char *path);
   char *sys_dirname(char *path);
+  void sys_fread_long_long(long long *value, FILE *file);
+  void sys_fread_int(int *value, FILE *file);
+  void sys_fread_short(short *value, FILE *file);
   
 #ifdef __cplusplus
 };

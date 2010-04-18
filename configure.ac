@@ -22,6 +22,7 @@ AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
+AC_C_BIGENDIAN
 
 # large file support
 AC_SYS_LARGEFILE

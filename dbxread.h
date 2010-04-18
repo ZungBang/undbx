@@ -1,6 +1,6 @@
 /*
     UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
-    Copyright (C) 2008, 2009 Avi Rozen <avi.rozen@gmail.com>
+    Copyright (C) 2008-2010 Avi Rozen <avi.rozen@gmail.com>
 
     DBX file format parsing code is based on
     DbxConv - a DBX to MBOX Converter.
@@ -48,8 +48,30 @@ extern "C" {
     DBX_MASK_BODYLINES = 0x04,
     DBX_MASK_MSGADDR   = 0x08,
     DBX_MASK_MSGPRIO   = 0x10,
-    DBX_MASK_MSGSIZE    = 0x20
+    DBX_MASK_MSGSIZE   = 0x20
   } dbx_mask_t;
+
+  typedef enum {
+    DBX_SCAN_MESSAGES,
+    DBX_SCAN_DELETED,
+    
+    DBX_SCAN_NUM
+  } dbx_scan_t;
+
+  typedef struct dbx_fragment_s {
+    unsigned int offset;
+    unsigned int offset_next;
+    unsigned int size;
+    int prev;    
+    int next;
+  } dbx_fragment_t;
+  
+  typedef struct dbx_chains_s {
+    int fragment_count;
+    dbx_fragment_t *fragments;
+    int count;
+    dbx_fragment_t **chains;
+  } dbx_chains_t;
 
   typedef struct dbx_info_s {
     int index;
@@ -82,17 +104,19 @@ extern "C" {
   typedef struct dbx_s {
     char *filename;
     FILE *file;
+    int recover;
     unsigned long long file_size;
     dbx_type_t type;
     int message_count;
     int capacity;
-    dbx_info_t *info;  
+    dbx_info_t *info;
+    dbx_chains_t scan[DBX_SCAN_NUM];
   } dbx_t;
 
-  extern dbx_t *dbx_open(char *filename);
+  extern dbx_t *dbx_open(char *filename, int recover);
   extern void dbx_close(dbx_t *dbx);
   extern char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize);
-  
+  extern char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned int *psize, time_t *ptimestamp, char **pfilename);
 #ifdef __cplusplus
 };
 #endif

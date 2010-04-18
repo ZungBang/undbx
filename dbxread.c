@@ -1,6 +1,6 @@
 /*
     UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
-    Copyright (C) 2008, 2009 Avi Rozen <avi.rozen@gmail.com>
+    Copyright (C) 2008-2010 Avi Rozen <avi.rozen@gmail.com>
 
     DBX file format parsing code is based on
     DbxConv - a DBX to MBOX Converter.
@@ -44,38 +44,6 @@ static int _dbx_info_cmp(const dbx_info_t *ia, const dbx_info_t *ib)
   return res;
 }
 
-static void _dbx_fread_long_long(long long *value, FILE *file)
-{
-  long long llw = 0;
-  llw =  (long long) (fgetc(file) & 0xFF);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x08);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x10);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x18);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x20);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x28);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x30);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x38);  
-  *value = llw;
-}
-
-static void _dbx_fread_int(int *value, FILE *file)
-{
-  int dw = 0;
-  dw =  (int) (fgetc(file) & 0xFF);
-  dw |= ((int) (fgetc(file) & 0xFF) << 0x08);
-  dw |= ((int) (fgetc(file) & 0xFF) << 0x10);
-  dw |= ((int) (fgetc(file) & 0xFF) << 0x18);
-  *value = dw;
-}
-
-static void _dbx_fread_short(short *value, FILE *file)
-{
-  short w = 0;
-  w =  (short) (fgetc(file) & 0xFF);
-  w |= ((short) (fgetc(file) & 0xFF) << 0x08);
-  *value = w;
-}
-
 static char *_dbx_read_string(FILE *file, int offset)
 {
   char c[256];
@@ -102,7 +70,7 @@ static filetime_t _dbx_read_date(FILE *file, int offset)
 {
   filetime_t filetime = 0;
   fseek(file, offset, SEEK_SET);
-  _dbx_fread_long_long((long long *)&filetime, file);
+  sys_fread_long_long((long long *)&filetime, file);
   return filetime;
 }
 
@@ -111,7 +79,7 @@ static int _dbx_read_int(FILE *file, int offset, int value)
   int val = value;
   if (offset) {
     fseek(file, offset, SEEK_SET);
-    _dbx_fread_int(&val, file);
+    sys_fread_int(&val, file);
   }
   return val;
 }
@@ -193,8 +161,8 @@ static void _dbx_read_info(dbx_t *dbx)
     int pos = index + 12;
 
     fseek(dbx->file, index + 4, SEEK_SET);
-    _dbx_fread_int(&size, dbx->file);
-    _dbx_fread_int(&count, dbx->file);
+    sys_fread_int(&size, dbx->file);
+    sys_fread_int(&count, dbx->file);
     count = (count & 0x00FF0000) >> 16;
     
     dbx->info[i].valid = 0;
@@ -204,7 +172,7 @@ static void _dbx_read_info(dbx_t *dbx)
       unsigned int value = 0;
 
       fseek(dbx->file, pos, SEEK_SET);
-      _dbx_fread_int((int*)&value, dbx->file);
+      sys_fread_int((int*)&value, dbx->file);
       type = value & 0xFF;
       value = (value >> 8) & 0xFFFFFF;
 
@@ -305,11 +273,11 @@ static int _dbx_read_index(dbx_t *dbx, int pos)
   }
     
   fseek(dbx->file, pos + 8, SEEK_SET);
-  _dbx_fread_int(&next_table, dbx->file);
+  sys_fread_int(&next_table, dbx->file);
   fseek(dbx->file, 5, SEEK_CUR);
   fread(&ptr_count, 1, 1, dbx->file);
   fseek(dbx->file, 2, SEEK_CUR);
-  _dbx_fread_int(&index_count, dbx->file);
+  sys_fread_int(&index_count, dbx->file);
   
   if (index_count > 0) {
     if (!_dbx_read_index(dbx, next_table))
@@ -323,9 +291,9 @@ static int _dbx_read_index(dbx_t *dbx, int pos)
   for (i = 0; i < ptr_count; i++) {
     int index_ptr;
     fseek(dbx->file, pos, SEEK_SET);
-    _dbx_fread_int(&index_ptr, dbx->file);
-    _dbx_fread_int(&next_table, dbx->file);
-    _dbx_fread_int(&index_count, dbx->file);
+    sys_fread_int(&index_ptr, dbx->file);
+    sys_fread_int(&next_table, dbx->file);
+    sys_fread_int(&index_count, dbx->file);
 
     memset(dbx->info + dbx->message_count, 0, sizeof(dbx_info_t));
     dbx->info[dbx->message_count].index = index_ptr;
@@ -348,10 +316,10 @@ static int _dbx_read_indexes(dbx_t *dbx)
   int item_count;
         
   fseek(dbx->file, INDEX_POINTER, SEEK_SET);
-  _dbx_fread_int(&index_ptr, dbx->file);
+  sys_fread_int(&index_ptr, dbx->file);
 
   fseek(dbx->file, ITEM_COUNT, SEEK_SET);
-  _dbx_fread_int(&item_count, dbx->file);
+  sys_fread_int(&item_count, dbx->file);
 
   if (item_count > 0) 
     return _dbx_read_index(dbx, index_ptr);
@@ -359,6 +327,194 @@ static int _dbx_read_indexes(dbx_t *dbx)
     return 0;
 }
 
+static void _dbx_scan(dbx_t *dbx)
+{
+  int header[8] = {0};
+  int header_start = 0;
+  int ready = 0;
+  unsigned int i = 0;
+  unsigned int pi = 0;
+  int j = 0;
+
+  const unsigned int di = (unsigned int) (((unsigned int) dbx->file_size) / 1000.0);
+  printf("------ Scanning %s:   0.0%%", dbx->filename);
+  fflush(stdout);
+
+  /* the following can only work if file size is less than 4G
+     mingw gcc (4.4.2) doesn't seem to like long longs */
+  for (i = 0; i < (unsigned int)dbx->file_size; i += 4) {
+    dbx_chains_t *chains = NULL;
+    dbx_fragment_t *other = NULL;
+    dbx_fragment_t *fragment = NULL;
+
+    if (i - pi >= di) {
+      printf("\b\b\b\b\b\b%5.1f%%", 100 * ((double)i)/(unsigned int)dbx->file_size);
+      fflush(stdout);
+      pi = i;
+    }
+    
+    /* initialize header buffer */
+    if (!ready) {
+      header_start = 0;
+      for (j = 0; j < 4; j++) 
+        sys_fread_int(header + j, dbx->file);
+      i += 16;
+      ready = 1;
+    }
+    
+    sys_fread_int(header + ((header_start + 4) & 7), dbx->file);
+
+#if 0
+    printf("BEFORE %08X ", (unsigned int)i);
+    for (j = 0; j < 5; j++) {
+      printf("%08X ", header[(header_start + j) & 7]);
+    }
+    printf("\n");
+#endif
+
+    /* message fragment header signature:
+       =================================
+       1st word value equals offset into file 
+       2nd word is 0x200 
+       3rd word is fragment length: must be positive, but not more than 0x200 
+       4th word value is the file offset of the next fragment, or 0 if last
+
+       deleted message fragment header signature:
+       =========================================
+       1st word value equals offset into file
+       2nd word is 0x1FC
+       3rd word is 0x210
+       4th word value is offset of next fragment or 0 if last
+       5th word value is offset of previous fragment (clobbering message data!)
+
+       sanity: we check that all offsets are less than file size,
+               and are a multiple of 4 and that fragment does not point to itself
+    */
+    if (header[header_start] != i ||
+        (!(header[(header_start + 1) & 7] == 0x200 &&
+           header[(header_start + 2) & 7] > 0 &&
+           header[(header_start + 2) & 7] <= 0x200 &&
+           header[(header_start + 3) & 7] < dbx->file_size &&
+           (header[(header_start + 3) & 7] & 3) == 0 &&
+           header[(header_start + 3) & 7] != i) &&
+         !(header[(header_start + 1) & 7] == 0x1FC && 
+           header[(header_start + 2) & 7] == 0x210 &&
+           header[(header_start + 3) & 7] < dbx->file_size &&
+           (header[(header_start + 3) & 7] & 3) == 0 &&
+           header[(header_start + 3) & 7] != i &&
+           header[(header_start + 4) & 7] < dbx->file_size &&
+           (header[(header_start + 4) & 7] & 3) == 0))) {
+      header_start = (header_start + 1) & 7;
+      continue;
+    }
+
+#if 0
+    printf("AFTER  %08X ", (unsigned int)i);
+    for (j = 0; j < 5; j++) {
+      printf("%08X ", header[(header_start + j) & 7]);
+    }
+    printf("\n");
+#endif
+
+    /* add fragment to fragment list */
+    chains = dbx->scan + ((header[(header_start + 1) & 7] == 0x200)? 0:1);
+    
+    chains->fragments = (dbx_fragment_t *)realloc(chains->fragments,
+                                                  sizeof(dbx_fragment_t) * (chains->fragment_count + 1));
+    fragment = chains->fragments + chains->fragment_count;
+    fragment->prev = -1;
+    fragment->next = -1;
+    fragment->offset = header[header_start];
+    fragment->offset_next = header[(header_start + 3) & 7];
+    fragment->size = header[(header_start + 2) & 7];
+    chains->fragment_count++;
+    chains->count++;
+
+    /* find next fragment, if we already passed it, starting with the previous fragment */
+    if (fragment->offset_next && fragment->offset_next < fragment->offset) {
+      other = fragment - 1;
+      while (other >= chains->fragments) {
+        if (fragment->offset_next == other->offset) {
+          fragment->next = other - chains->fragments;
+          other->prev = chains->fragment_count - 1;
+          chains->count--;
+          break;
+        }
+        other--;
+      }
+    }
+
+    /* find prev fragment, starting with the previous fragment */
+    other = fragment - 1;
+    while (other >= chains->fragments) {
+      if (fragment->offset == other->offset_next) {
+        fragment->prev = other - chains->fragments;
+        other->next = chains->fragment_count - 1;
+        chains->count--;
+        break;
+      }
+      other--;
+    }
+
+    /* skip contents of fragment */
+    i += 0x200 - 4;
+    fseek(dbx->file, i + 20, SEEK_SET);
+    /* header buffer should be refilled */
+    ready = 0;
+  }
+
+  printf("\b\b\b\b\b\b100.0%%\n");
+  
+  /* collect the fragments that start messages chains
+     messages start with fragments where prev == NULL */
+  for (j = 0; j < DBX_SCAN_NUM; j++) {
+    if (dbx->scan[j].count) {
+      int nm = 0;
+      int nf = 0;
+      
+      dbx->scan[j].chains = (dbx_fragment_t **)calloc(dbx->scan[j].count, sizeof(dbx_fragment_t *));
+      for (nm = 0; nm < dbx->scan[j].count; nm++) {
+        while (dbx->scan[j].fragments[nf].prev >= 0)
+          nf++;
+        dbx->scan[j].chains[nm] = dbx->scan[j].fragments + nf;
+        nf++;
+      }
+    }
+  }
+
+#if 0
+  {
+    int ic = 0;
+    for(ic = 0; ic < 2; ic++) {
+      int i = 0;
+      int starts = 0;
+      int ends = 0;
+      int missing_next = 0;
+      dbx_chains_t *chains = dbx->scan + ic;
+      for (i = 0; i < chains->fragment_count; i++) {
+        if (chains->fragments[i].prev == NULL) {
+          starts++;
+        }
+        if (chains->fragments[i].next == NULL) {
+          ends++;
+          if (chains->fragments[i].offset_next != 0) {
+            printf("%s missing next at i = %06d : %08X %08X %08X\n",
+                   ic == 0? "MESSAGE":"DELETED",
+                   i,
+                   chains->fragments[i].offset,
+                   chains->fragments[i].size,
+                   chains->fragments[i].offset_next
+                   );
+            missing_next++;
+          }
+        }
+      }
+      printf("%s starts=%d ends=%d missing_next=%d\n",
+             ic == 0? "MESSAGE":"DELETED", starts, ends, missing_next);
+    }
+  }
+#endif
+}
 
 static void _dbx_init(dbx_t *dbx)
 {
@@ -370,7 +526,7 @@ static void _dbx_init(dbx_t *dbx)
   dbx->info = NULL;
 
   for(i = 0; i < 4; i++)
-    _dbx_fread_int((int *)(signature + i), dbx->file);
+    sys_fread_int((int *)(signature + i), dbx->file);
 
   if (signature[0] == 0xFE12ADCF &&
       signature[1] == 0x6F74FDC5 &&
@@ -392,7 +548,11 @@ static void _dbx_init(dbx_t *dbx)
     dbx->type = DBX_TYPE_UNKNOWN;
   }
 
-  if (dbx->type == DBX_TYPE_EMAIL) {
+  if (dbx->recover) {
+    /* we ignore file type in recovery mode */
+    _dbx_scan(dbx);
+  }
+  else if (dbx->type == DBX_TYPE_EMAIL) {
     _dbx_read_indexes(dbx);
     _dbx_read_info(dbx);
     qsort(dbx->info, dbx->message_count, sizeof(dbx_info_t), (dbx_cmpfunc_t) _dbx_info_cmp);
@@ -401,7 +561,7 @@ static void _dbx_init(dbx_t *dbx)
 }
 
 
-dbx_t *dbx_open(char *filename)
+dbx_t *dbx_open(char *filename, int recover)
 {
   dbx_t *dbx = (dbx_t *) calloc(1, sizeof(dbx_t));
 
@@ -419,7 +579,8 @@ dbx_t *dbx_open(char *filename)
       }
       else {
         dbx->filename = strdup(filename);
-        dbx->file_size = st.st_size;
+        dbx->file_size = sys_filesize(".", filename);
+        dbx->recover = recover;
         _dbx_init(dbx);
       }
     }
@@ -458,6 +619,20 @@ void dbx_close(dbx_t *dbx)
     free(dbx->info);
     dbx->info = NULL;
     free(dbx->filename);
+
+    for (i = 0; i < DBX_SCAN_NUM; i++) {
+      if (dbx->scan[i].chains) {
+        free(dbx->scan[i].chains);
+        dbx->scan[i].chains = NULL;
+        dbx->scan[i].count = 0;
+      }
+      if (dbx->scan[i].fragments) {
+        free(dbx->scan[i].fragments);
+        dbx->scan[i].fragments = NULL;
+        dbx->scan[i].fragment_count = 0;
+      }
+    }
+    
     free(dbx);
   }
 }
@@ -485,13 +660,13 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
   index = dbx->info[msg_number].index;
 
   fseek(dbx->file, index + 4, SEEK_SET);
-  _dbx_fread_int(&size, dbx->file);
+  sys_fread_int(&size, dbx->file);
   fseek(dbx->file, 2, SEEK_CUR);
   fread(&count, 1, 1, dbx->file);
   fseek(dbx->file, 1, SEEK_CUR);
 
   for (i = 0; i < count; i++) {
-    _dbx_fread_int((int *)&value, dbx->file);
+    sys_fread_int((int *)&value, dbx->file);
     type = value & 0xFF;
     value = (value >> 8) & 0xFFFFFF;                
 
@@ -507,7 +682,7 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
         
   if (msg_offset == 0 && msg_offset_ptr != 0) {
     fseek(dbx->file, msg_offset_ptr, SEEK_SET);
-    _dbx_fread_int(&msg_offset, dbx->file);
+    sys_fread_int(&msg_offset, dbx->file);
   }
 
   buf = NULL;
@@ -517,9 +692,9 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
   while (i != 0) {
     fseek(dbx->file, i + 8, SEEK_SET);
     block_size=0;
-    _dbx_fread_short(&block_size, dbx->file);
+    sys_fread_short(&block_size, dbx->file);
     fseek(dbx->file, 2, SEEK_CUR);
-    _dbx_fread_int(&i, dbx->file);
+    sys_fread_int(&i, dbx->file);
     total_size += block_size;
     buf = realloc(buf, total_size + 1);
     fread(buf + total_size - block_size, block_size, 1, dbx->file); 
@@ -533,4 +708,44 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
   
   return buf;
 }
+
+char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned int *psize, time_t *ptimestamp, char **pfilename)
+{
+  unsigned int size = 0;
+  char filename[DBX_MAX_FILENAME];
+  char *message = NULL;
+  dbx_fragment_t *pfragment = NULL;
+  int ifragment = dbx->scan[chain_index].chains[msg_number] - dbx->scan[chain_index].fragments;
+  unsigned int fsize = 0;
+
+  sprintf(filename, "%s%08X.eml", chain_index? "deleted_":"", dbx->scan[chain_index].chains[msg_number]->offset);
+  
+  for ( ; ifragment >= 0; ifragment = pfragment->next) {
+    pfragment = dbx->scan[chain_index].fragments + ifragment;
+    fsize = pfragment->size <= 0x200? pfragment->size : 0x200;
+    fseek(dbx->file, pfragment->offset + 16, SEEK_SET);
+    message = (char *)realloc(message, size + fsize + 1);
+    fread(message + size, fsize, 1, dbx->file);
+    /* each deleted fragment starts with bad 4 bytes */
+    if (chain_index) 
+      memset(message + size, ' ', 4);
+    size += fsize;
+  } 
+
+  if (message) {
+    message[size] = '\0';
+    if (chain_index) {
+      int zeros = 0;
+      while (message[size - zeros] == 0)
+        zeros++;
+      size -= zeros - 1;
+    }
+  }
+  
+  *psize = size;
+  *ptimestamp = 0;
+  *pfilename = strdup(filename);
+  return message;
+}
+
 

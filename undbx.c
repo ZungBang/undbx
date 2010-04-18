@@ -1,6 +1,6 @@
 /*
     UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
-    Copyright (C) 2008, 2009 Avi Rozen <avi.rozen@gmail.com>
+    Copyright (C) 2008-2010 Avi Rozen <avi.rozen@gmail.com>
 
     DBX file format parsing code is based on
     DbxConv - a DBX to MBOX Converter.
@@ -40,7 +40,7 @@ static int _str_cmp(const char **ia, const char **ib)
   return strcmp(*ia, *ib);
 }
 
-static dbx_save_status_t _save_message(char *dir, char *filename, char *message, long size)
+static dbx_save_status_t _save_message(char *dir, char *filename, char *message, unsigned int size)
 {
   FILE *eml = NULL;
   char *cwd = NULL;
@@ -81,7 +81,31 @@ static dbx_save_status_t _save_message(char *dir, char *filename, char *message,
 }
 
 
-static void _set_message_date(dbx_info_t *info, char *dir)
+static void _set_message_time(char *dir, char *filename, time_t timestamp)
+{
+  char *cwd = NULL;
+  int rc = 0;
+
+  cwd = sys_getcwd();
+  if (cwd == NULL) {
+    perror("_set_message_time (sys_getcwd)");
+    return;
+  }
+  
+  rc = sys_chdir(dir);
+  if (rc != 0) {
+    perror("_set_message_time (sys_chdir)");
+    return;
+  }
+
+  sys_set_time(filename, timestamp);
+
+  sys_chdir(cwd);
+  free(cwd);
+  cwd = NULL;
+}
+
+static void _set_message_filetime(dbx_info_t *info, char *dir)
 {
   char *cwd = NULL;
   int rc = 0;
@@ -89,13 +113,13 @@ static void _set_message_date(dbx_info_t *info, char *dir)
 
   cwd = sys_getcwd();
   if (cwd == NULL) {
-    perror("_set_message_date (sys_getcwd)");
+    perror("_set_message_filetime (sys_getcwd)");
     return;
   }
   
   rc = sys_chdir(dir);
   if (rc != 0) {
-    perror("_set_message_date (sys_chdir)");
+    perror("_set_message_filetime (sys_chdir)");
     return;
   }
 
@@ -133,7 +157,7 @@ static dbx_save_status_t _maybe_save_message(dbx_t *dbx, int imessage, char *dir
         fflush(stdout);
         break;
       case DBX_SAVE_OK:
-        _set_message_date(info, dir);
+        _set_message_filetime(info, dir);
         printf("%5.1f%%     OK: %s\n", 100 * (imessage + 1.0)/dbx->message_count, info->filename);
         fflush(stdout);
         break;
@@ -147,79 +171,78 @@ static dbx_save_status_t _maybe_save_message(dbx_t *dbx, int imessage, char *dir
   return status;
 }
 
-static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file)
+
+static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *errors)
 {
-  int deleted = 0;
-  int saved = 0;
-  int errors = 0;
+  int i = 0;
+  const char *scan_type[DBX_SCAN_NUM] = { "messages", "deleted message fragments" };
   
+  for(i = 0; i < DBX_SCAN_NUM; i++) {
+    int s = 0;
+    int e = 0;
+    dbx_save_status_t status = DBX_SAVE_NOOP;
+    int imessage = 0;
+    char *message = NULL;
+    char *filename = NULL;
+    unsigned int size = 0;
+    time_t timestamp = 0;
+    
+    if (dbx->scan[i].count > 0) {
+      printf("------ Recovering %d %s from %s to %s/%s ... \n",
+             dbx->scan[i].count, scan_type[i], dbx->filename, out_dir, eml_dir);
+      for (imessage = 0; imessage < dbx->scan[i].count; imessage++) {
+        message = dbx_recover_message(dbx, i, imessage, &size, &timestamp, &filename);
+        if (message) {
+          status = _save_message(eml_dir, filename, message, size);
+          switch (status) {
+          case DBX_SAVE_ERROR:
+            e++;
+            printf("%5.1f%%  ERROR: %s\n", 100 * (imessage + 1.0)/dbx->scan[i].count, filename);
+            fflush(stdout);
+            break;
+          case DBX_SAVE_OK:
+            s++;
+            _set_message_time(eml_dir, filename, timestamp);
+            printf("%5.1f%%     OK: %s\n", 100 * (imessage + 1.0)/dbx->scan[i].count, filename);
+            fflush(stdout);
+            break;
+          default:
+            break;
+          }
+        }
+        free(filename);
+        free(message);
+      }
+      printf("------ %d %s recovered, %d errors\n", s, scan_type[i], e);
+      fflush(stdout);
+    }
+    *saved += s;
+    *errors += e;
+  }
+}
+
+static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *deleted, int *errors)
+{
   int no_more_messages = 0;
   int no_more_files = 0;
   char **eml_files = NULL;
   int num_eml_files = 0;
   int imessage = 0;
   int ifile = 0;
-  dbx_t *dbx = NULL;
-  char *eml_dir = NULL;
-  char *cwd = NULL;
-  int rc = 0;
 
-  cwd = sys_getcwd();
-  if (cwd == NULL) {
-    fprintf(stderr, "error: can't get current working directory\n");
-    return -1;
-  }
-
-  rc = sys_chdir(dbx_dir);
-  if (rc != 0) {
-    fprintf(stderr, "error: can't chdir to %s\n", dbx_dir);
-    return -1;
-  }
-  
-  dbx = dbx_open(dbx_file);
-
-  sys_chdir(cwd);
-
-  if (dbx == NULL) {
-    fprintf(stderr, "warning: can't open DBX file %s\n", dbx_file);
-    return -1;
-  }
-
-  if (dbx->type != DBX_TYPE_EMAIL) {
-    fprintf(stderr, "warning: DBX file %s does not contain messages\n", dbx_file);
-    return -1;
-  }
-
-  if (dbx->file_size >= 0x80000000) {
-    fprintf(stderr, "warning: DBX file %s is corrupted (larger than 2GB)\n", dbx_file);
-  }
-
-  eml_dir = strdup(dbx_file);
-  eml_dir[strlen(eml_dir) - 4] = '\0';
-  rc = sys_mkdir(out_dir, eml_dir);
-  if (rc != 0) {
-    fprintf(stderr, "error: can't create directory %s/%s\n", out_dir, eml_dir);
-    return -1;
-  }
-
-  printf("------ Extracting %d messages from %s to %s/%s ... \n", dbx->message_count, dbx_file, out_dir, eml_dir);
+  printf("------ Extracting %d messages from %s to %s/%s ... \n",
+         dbx->message_count, dbx->filename, out_dir, eml_dir);
   fflush(stdout);
-
-  rc = sys_chdir(out_dir);
-  if (rc != 0) {
-    fprintf(stderr, "error: can't chdir to %s\n", out_dir);
-    return -1;
-  }
 
   eml_files = sys_glob(eml_dir, "*.eml", &num_eml_files);
 
   no_more_messages = (imessage == dbx->message_count);
   no_more_files = (ifile == num_eml_files);
-        
+  
   qsort(eml_files, num_eml_files, sizeof(char *), (dbx_cmpfunc_t) _str_cmp);
       
   while (!no_more_messages || !no_more_files) {
-    
+      
     dbx_save_status_t status = DBX_SAVE_NOOP;
     int cond;
     
@@ -251,19 +274,81 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file)
       printf("%5.1f%% DELETE: %s\n", 100 * (imessage + 1.0)/dbx->message_count, eml_files[ifile]);
       ifile++;
       no_more_files = (ifile == num_eml_files);
-      deleted++;
+      (*deleted)++;
     }
 
     if (status == DBX_SAVE_OK)
-      saved++;
+      (*saved)++;
     if (status == DBX_SAVE_ERROR)
-      errors++;
+      (*errors)++;
   }
 
-  printf("------ %d messages saved, %d skipped, %d errors, %d files deleted\n", saved, dbx->message_count - saved - errors, errors, deleted);
+  printf("------ %d messages saved, %d skipped, %d errors, %d files deleted\n",
+         *saved, dbx->message_count - *saved - *errors, *errors, *deleted);
   fflush(stdout);
   
   sys_glob_free(eml_files);
+}
+
+static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
+{
+  int deleted = 0; 
+  int saved = 0;
+  int errors = 0;
+  
+  dbx_t *dbx = NULL;
+  char *eml_dir = NULL;
+  char *cwd = NULL;
+  int rc = 0;
+
+  cwd = sys_getcwd();
+  if (cwd == NULL) {
+    fprintf(stderr, "error: can't get current working directory\n");
+    return -1;
+  }
+
+  rc = sys_chdir(dbx_dir);
+  if (rc != 0) {
+    fprintf(stderr, "error: can't chdir to %s\n", dbx_dir);
+    return -1;
+  }
+  
+  dbx = dbx_open(dbx_file, recover);
+  
+  sys_chdir(cwd);
+
+  if (dbx == NULL) {
+    fprintf(stderr, "warning: can't open DBX file %s\n", dbx_file);
+    return -1;
+  }
+
+  if (!recover && dbx->type != DBX_TYPE_EMAIL) {
+    fprintf(stderr, "warning: DBX file %s does not contain messages\n", dbx_file);
+    return -1;
+  }
+
+  if (!recover && dbx->file_size >= 0x80000000) {
+    fprintf(stderr, "warning: DBX file %s is corrupted (larger than 2GB)\n", dbx_file);
+  }
+
+  eml_dir = strdup(dbx_file);
+  eml_dir[strlen(eml_dir) - 4] = '\0';
+  rc = sys_mkdir(out_dir, eml_dir);
+  if (rc != 0) {
+    fprintf(stderr, "error: can't create directory %s/%s\n", out_dir, eml_dir);
+    return -1;
+  }
+
+  rc = sys_chdir(out_dir);
+  if (rc != 0) {
+    fprintf(stderr, "error: can't chdir to %s\n", out_dir);
+    return -1;
+  }
+
+  if (recover)
+    _recover(dbx, out_dir, eml_dir, &saved, &errors);
+  else
+    _extract(dbx, out_dir, eml_dir, &saved, &deleted, &errors);
 
   free(eml_dir);
   eml_dir = NULL;
@@ -299,7 +384,7 @@ static char **_get_files(char **dir, int *num_files)
 #ifndef _WIN32
 static void _usage(char *prog)
 {
-  fprintf(stderr, "Usage: %s <DBX-DIRECTORY | DBX-FILE> [<OUTPUT-DIRECTORY>]\n", prog);
+  fprintf(stderr, "Usage: %s [--recover] <DBX-DIRECTORY | DBX-FILE> [<OUTPUT-DIRECTORY>]\n", prog);
   exit(EXIT_FAILURE);
 }
 #else
@@ -320,10 +405,11 @@ int main(int argc, char *argv[])
   char *dbx_dir = NULL;
   char *out_dir = NULL;
   int num_dbx_files = 0;
+  int recover = 0;
 
   printf("UnDBX v" DBX_VERSION " (" __DATE__ ")\n");
   
-  if (argc < 2 || argc > 3) {
+  if (argc < 2 || argc > 4) {
 #ifndef _WIN32
     _usage(argv[0]);
 #else
@@ -331,16 +417,18 @@ int main(int argc, char *argv[])
 #endif
   }
 
-  dbx_dir = strdup(argv[1]);
+  recover = strcmp(argv[1], "--recover") == 0? 1:0;
   
-  if (argc == 3)
-    out_dir = argv[2];
+  dbx_dir = strdup(argv[1+recover]);
+  
+  if (argc == 3+recover)
+    out_dir = argv[2+recover];
   else
     out_dir = ".";
 
   dbx_files = _get_files(&dbx_dir, &num_dbx_files);
   for(n = 0; n < num_dbx_files; n++) {
-    if (_undbx(dbx_dir, out_dir, dbx_files[n]))
+    if (_undbx(dbx_dir, out_dir, dbx_files[n], recover))
       fail++;
   }
 

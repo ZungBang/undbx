@@ -7,7 +7,7 @@ UnDBX
 
 .. _UnDBX: http://code.google.com/p/undbx/
 
-Copyright (C) 2008, 2009 Avi Rozen <avi.rozen@gmail.com>
+Copyright (C) 2008-2010 Avi Rozen <avi.rozen@gmail.com>
 
 DOWNLOAD
 --------
