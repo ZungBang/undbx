@@ -434,7 +434,7 @@ static void _dbx_scan(dbx_t *dbx)
     if (fragment->offset_next && fragment->offset_next < fragment->offset) {
       other = fragment - 1;
       while (other >= chains->fragments) {
-        if (fragment->offset_next == other->offset) {
+        if (other->prev < 0 && fragment->offset_next == other->offset) {
           fragment->next = other - chains->fragments;
           other->prev = chains->fragment_count - 1;
           chains->count--;
@@ -447,7 +447,7 @@ static void _dbx_scan(dbx_t *dbx)
     /* find prev fragment, starting with the previous fragment */
     other = fragment - 1;
     while (other >= chains->fragments) {
-      if (fragment->offset == other->offset_next) {
+      if (other->next < 0 && fragment->offset == other->offset_next) {
         fragment->prev = other - chains->fragments;
         other->next = chains->fragment_count - 1;
         chains->count--;
