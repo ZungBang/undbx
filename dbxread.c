@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include "dbxread.h"
+#include "emlread.h"
 
 #define INDEX_POINTER 0xE4
 #define ITEM_COUNT    0xC4
@@ -84,15 +85,24 @@ static int _dbx_read_int(FILE *file, int offset, int value)
   return val;
 }
 
-static void _dbx_set_filename(dbx_info_t *info)
+static void _dbx_sanitize_filename(char *filename)
 {
-  int i;
-  int l;
-  char filename[DBX_MAX_FILENAME];
-  char suffix[sizeof(".00000000.00000000.eml.00000000")];
-
+  char *c = NULL;
   static const char * const invalid_characters = "\\/?\"<>*|:";
   static const char valid_char = '_';
+
+  if (!filename)
+    return;
+  
+  for (c = filename; *c; c++) 
+    if ((unsigned char)*c < 32 || strchr(invalid_characters, *c)) 
+      *c = valid_char;
+}
+
+static void _dbx_set_filename(dbx_info_t *info)
+{
+  char filename[DBX_MAX_FILENAME];
+  char suffix[sizeof(".00000000.00000000.eml.00000000")];
 
   snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%.15s_%.15s_%.15s_%.15s_%s",
            info->sender_name? info->sender_name:"_(no_name)_",
@@ -106,16 +116,11 @@ static void _dbx_set_filename(dbx_info_t *info)
           (unsigned int) (info->send_create_time & 0xFFFFFFFFULL));
   strcat(filename, suffix);
 
-  l = strlen(filename);
-  for (i = 0; i < l; i++) {
-    if ((unsigned char)filename[i] < 32 || strchr(invalid_characters, filename[i])) {
-      filename[i] = valid_char;
-    }
-  }
+  _dbx_sanitize_filename(filename);
   
   info->filename = strdup(filename);
   /* remove trailing extra space (reserved for uniquification of filename) */
-  info->filename[l - sizeof("00000000")] = '\0';
+  info->filename[strlen(info->filename) - sizeof("00000000")] = '\0';
 }
 
 static void _dbx_uniquify_filenames(dbx_t *dbx)
@@ -341,7 +346,9 @@ static void _dbx_scan(dbx_t *dbx)
   fflush(stdout);
 
   /* the following can only work if file size is less than 4G
-     mingw gcc (4.4.2) doesn't seem to like long longs */
+     (which is way over the 2GB dbx size limit)
+     mingw gcc (4.4.2) doesn't seem to like long longs
+  */
   for (i = 0; i < (unsigned int)dbx->file_size; i += 4) {
     dbx_chains_t *chains = NULL;
     dbx_fragment_t *other = NULL;
@@ -363,14 +370,6 @@ static void _dbx_scan(dbx_t *dbx)
     }
     
     sys_fread_int(header + ((header_start + 4) & 7), dbx->file);
-
-#if 0
-    printf("BEFORE %08X ", (unsigned int)i);
-    for (j = 0; j < 5; j++) {
-      printf("%08X ", header[(header_start + j) & 7]);
-    }
-    printf("\n");
-#endif
 
     /* message fragment header signature:
        =================================
@@ -408,14 +407,6 @@ static void _dbx_scan(dbx_t *dbx)
       continue;
     }
 
-#if 0
-    printf("AFTER  %08X ", (unsigned int)i);
-    for (j = 0; j < 5; j++) {
-      printf("%08X ", header[(header_start + j) & 7]);
-    }
-    printf("\n");
-#endif
-
     /* add fragment to fragment list */
     chains = dbx->scan + ((header[(header_start + 1) & 7] == 0x200)? 0:1);
     
@@ -430,10 +421,13 @@ static void _dbx_scan(dbx_t *dbx)
     chains->fragment_count++;
     chains->count++;
 
-    /* find next fragment, if we already passed it, starting with the previous fragment */
+    /* find next fragment, if we already passed it, starting with the previous fragment,
+       which is it, usually
+    */
     if (fragment->offset_next && fragment->offset_next < fragment->offset) {
       other = fragment - 1;
       while (other >= chains->fragments) {
+        /* avoid fragments that have already been used, to avoid loops */
         if (other->prev < 0 && fragment->offset_next == other->offset) {
           fragment->next = other - chains->fragments;
           other->prev = chains->fragment_count - 1;
@@ -444,9 +438,12 @@ static void _dbx_scan(dbx_t *dbx)
       }
     }
 
-    /* find prev fragment, starting with the previous fragment */
+    /* find prev fragment, starting with the previous fragment,
+       which is it, usually
+    */
     other = fragment - 1;
     while (other >= chains->fragments) {
+      /* avoid fragments that have already been used, to avoid loops */
       if (other->next < 0 && fragment->offset == other->offset_next) {
         fragment->prev = other - chains->fragments;
         other->next = chains->fragment_count - 1;
@@ -466,7 +463,9 @@ static void _dbx_scan(dbx_t *dbx)
   printf("\b\b\b\b\b\b100.0%%\n");
   
   /* collect the fragments that start messages chains
-     messages start with fragments where prev == NULL */
+     messages start with fragments where prev == -1,
+     i.e. no other fragment points to it
+  */
   for (j = 0; j < DBX_SCAN_NUM; j++) {
     if (dbx->scan[j].count) {
       int nm = 0;
@@ -481,39 +480,6 @@ static void _dbx_scan(dbx_t *dbx)
       }
     }
   }
-
-#if 0
-  {
-    int ic = 0;
-    for(ic = 0; ic < 2; ic++) {
-      int i = 0;
-      int starts = 0;
-      int ends = 0;
-      int missing_next = 0;
-      dbx_chains_t *chains = dbx->scan + ic;
-      for (i = 0; i < chains->fragment_count; i++) {
-        if (chains->fragments[i].prev == NULL) {
-          starts++;
-        }
-        if (chains->fragments[i].next == NULL) {
-          ends++;
-          if (chains->fragments[i].offset_next != 0) {
-            printf("%s missing next at i = %06d : %08X %08X %08X\n",
-                   ic == 0? "MESSAGE":"DELETED",
-                   i,
-                   chains->fragments[i].offset,
-                   chains->fragments[i].size,
-                   chains->fragments[i].offset_next
-                   );
-            missing_next++;
-          }
-        }
-      }
-      printf("%s starts=%d ends=%d missing_next=%d\n",
-             ic == 0? "MESSAGE":"DELETED", starts, ends, missing_next);
-    }
-  }
-#endif
 }
 
 static void _dbx_init(dbx_t *dbx)
@@ -711,22 +677,32 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
 
 char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned int *psize, time_t *ptimestamp, char **pfilename)
 {
+  eml_t *eml = NULL;
   unsigned int size = 0;
   char filename[DBX_MAX_FILENAME];
+  char suffix[sizeof(".00000000.eml")];
   char *message = NULL;
   dbx_fragment_t *pfragment = NULL;
   int ifragment = dbx->scan[chain_index].chains[msg_number] - dbx->scan[chain_index].fragments;
   unsigned int fsize = 0;
 
-  sprintf(filename, "%s%08X.eml", chain_index? "deleted_":"", dbx->scan[chain_index].chains[msg_number]->offset);
-  
+  time_t timestamp = 0;
+  char *subject = NULL;
+  char *to = NULL;
+  char *from = NULL;
+
   for ( ; ifragment >= 0; ifragment = pfragment->next) {
     pfragment = dbx->scan[chain_index].fragments + ifragment;
+    /* deleted fragments have size 0x210, which is wrong - it's 0x200 */
     fsize = pfragment->size <= 0x200? pfragment->size : 0x200;
     fseek(dbx->file, pfragment->offset + 16, SEEK_SET);
     message = (char *)realloc(message, size + fsize + 1);
     fread(message + size, fsize, 1, dbx->file);
-    /* each deleted fragment starts with bad 4 bytes */
+    /* each deleted fragment starts with bad 4 bytes
+       (it's set to the offset of the previous fragment)
+       so we replace them with 4 spaces, which should
+       at least make text readable       
+    */
     if (chain_index) 
       memset(message + size, ' ', 4);
     size += fsize;
@@ -734,17 +710,41 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
 
   if (message) {
     message[size] = '\0';
+    /* lose trailing nul characters in deleted messages,
+       since size of last fragment is unknown
+    */
     if (chain_index) {
       int zeros = 0;
-      while (message[size - zeros] == 0)
+      while (zeros <= size && message[size - zeros] == 0)
         zeros++;
       size -= zeros - 1;
     }
+
+    eml = eml_init(message);
+    timestamp = eml_get_time(eml, "date");
+    subject = eml_get_header(eml, "subject");
+    to = eml_get_header(eml, "to");
+    from = eml_get_header(eml, "from");
   }
+
+  snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%s%.31s_%.31s_%s",
+           chain_index? "deleted_":"",
+           from? from:"_(no_sender)",
+           to? to:"(no_receiver)",
+           subject? subject:"(no_subject)");
+
+  if (message) 
+    eml_free(eml);
   
-  *psize = size;
-  *ptimestamp = 0;
+  sprintf(suffix, ".%08X.eml", dbx->scan[chain_index].chains[msg_number]->offset);
+  strcat(filename, suffix);
+
+  _dbx_sanitize_filename(filename);
+
   *pfilename = strdup(filename);
+  *ptimestamp = timestamp;
+  *psize = size;
+
   return message;
 }
 

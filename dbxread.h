@@ -113,10 +113,11 @@ extern "C" {
     dbx_chains_t scan[DBX_SCAN_NUM];
   } dbx_t;
 
-  extern dbx_t *dbx_open(char *filename, int recover);
-  extern void dbx_close(dbx_t *dbx);
-  extern char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize);
-  extern char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned int *psize, time_t *ptimestamp, char **pfilename);
+  dbx_t *dbx_open(char *filename, int recover);
+  void dbx_close(dbx_t *dbx);
+  char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize);
+  char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned int *psize, time_t *ptimestamp, char **pfilename);
+  
 #ifdef __cplusplus
 };
 #endif
