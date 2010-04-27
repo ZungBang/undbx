@@ -123,11 +123,7 @@ static void _set_message_filetime(dbx_info_t *info, char *dir)
     return;
   }
 
-  if (info->send_create_time && info->receive_create_time)
-    filetime = info->send_create_time < info->receive_create_time ?
-      info->send_create_time : info->receive_create_time;
-  else
-    filetime = info->send_create_time? info->send_create_time : info->receive_create_time;
+  filetime = info->send_create_time? info->send_create_time : info->receive_create_time;
 
   sys_set_filetime(info->filename, filetime);
 

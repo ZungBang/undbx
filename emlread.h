@@ -31,16 +31,7 @@ extern "C" {
 
   #include "dbxsys.h"
   
-  typedef struct eml_s {
-    int count;
-    char **keys;
-    char **values;
-  } eml_t;
-
-  eml_t *eml_init(char *message);
-  void eml_free(eml_t *eml);
-  char *eml_get_header(eml_t *eml, char *header);
-  time_t eml_get_time(eml_t *eml, char *header);
+  void eml_parse(char *message, char **subject, char **from, char **to, time_t *timestamp);
 
 #ifdef __cplusplus
 };

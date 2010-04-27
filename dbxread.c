@@ -677,7 +677,6 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
 
 char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned int *psize, time_t *ptimestamp, char **pfilename)
 {
-  eml_t *eml = NULL;
   unsigned int size = 0;
   char filename[DBX_MAX_FILENAME];
   char suffix[sizeof(".00000000.eml")];
@@ -700,11 +699,11 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     fread(message + size, fsize, 1, dbx->file);
     /* each deleted fragment starts with bad 4 bytes
        (it's set to the offset of the previous fragment)
-       so we replace them with 4 spaces, which should
-       at least make text readable       
+       so we replace them with 4 dashes, which eases
+       eml parsing and should at least make the text readable       
     */
     if (chain_index) 
-      memset(message + size, ' ', 4);
+      memset(message + size, '-', 4);
     size += fsize;
   } 
 
@@ -720,11 +719,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
       size -= zeros - 1;
     }
 
-    eml = eml_init(message);
-    timestamp = eml_get_time(eml, "date");
-    subject = eml_get_header(eml, "subject");
-    to = eml_get_header(eml, "to");
-    from = eml_get_header(eml, "from");
+    eml_parse(message, &subject, &from, &to, &timestamp);
   }
 
   snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%s%.31s_%.31s_%s",
@@ -733,8 +728,11 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
            to? to:"(no_receiver)",
            subject? subject:"(no_subject)");
 
-  if (message) 
-    eml_free(eml);
+  if (message) {
+    free(subject);
+    free(to);
+    free(from);
+  }
   
   sprintf(suffix, ".%08X.eml", dbx->scan[chain_index].chains[msg_number]->offset);
   strcat(filename, suffix);

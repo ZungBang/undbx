@@ -17,20 +17,22 @@ AC_PROG_MAKE_SET
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
+AC_CHECK_HEADERS([stdlib.h string.h unistd.h utime.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
 AC_C_BIGENDIAN
+AC_STRUCT_TIMEZONE
 
 # large file support
 AC_SYS_LARGEFILE
 
 # Checks for library functions.
+AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_FUNC_STAT
-AC_CHECK_FUNCS([getcwd memset mkdir strchr strdup])
+AC_FUNC_MKTIME
+AC_CHECK_FUNCS([getcwd isascii memset mkdir strcasecmp strchr strdup strncasecmp strspn strtoul utime])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
