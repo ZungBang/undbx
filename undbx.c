@@ -184,12 +184,24 @@ static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
     time_t timestamp = 0;
     
     if (dbx->scan[i].count > 0) {
+      char *dest_dir = strdup(eml_dir);
+      if (i) {
+        dest_dir = (char *)realloc(dest_dir, sizeof(char) * (strlen(dest_dir) + strlen("/deleted") + 1));
+        strcat(dest_dir, "/deleted");
+      }
       printf("------ Recovering %d %s from %s to %s/%s ... \n",
-             dbx->scan[i].count, scan_type[i], dbx->filename, out_dir, eml_dir);
+             dbx->scan[i].count, scan_type[i], dbx->filename, out_dir, dest_dir);
+      if (i) {
+        int rc = sys_mkdir(eml_dir, "deleted");
+        if (rc != 0) {
+          perror("_recover (sys_mkdir)");
+          break;
+        }
+      }
       for (imessage = 0; imessage < dbx->scan[i].count; imessage++) {
         message = dbx_recover_message(dbx, i, imessage, &size, &timestamp, &filename);
         if (message) {
-          status = _save_message(eml_dir, filename, message, size);
+          status = _save_message(dest_dir, filename, message, size);
           switch (status) {
           case DBX_SAVE_ERROR:
             e++;
@@ -198,7 +210,7 @@ static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
             break;
           case DBX_SAVE_OK:
             s++;
-            _set_message_time(eml_dir, filename, timestamp);
+            _set_message_time(dest_dir, filename, timestamp);
             printf("%5.1f%%     OK: %s\n", 100 * (imessage + 1.0)/dbx->scan[i].count, filename);
             fflush(stdout);
             break;
@@ -209,6 +221,7 @@ static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
         free(filename);
         free(message);
       }
+      free(dest_dir);
       printf("------ %d %s recovered, %d errors\n", s, scan_type[i], e);
       fflush(stdout);
     }

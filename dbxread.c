@@ -722,8 +722,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     eml_parse(message, &subject, &from, &to, &timestamp);
   }
 
-  snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%s%.31s_%.31s_%s",
-           chain_index? "deleted_":"",
+  snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%.31s_%.31s_%s",
            from? from:"_(no_sender)",
            to? to:"(no_receiver)",
            subject? subject:"(no_subject)");

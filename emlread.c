@@ -628,13 +628,20 @@ static int _eml_parse822_field_body (const char **p, const char *e, char **field
   char *fb = NULL;
 
   for (;;) {
-    const char *eol = *p;
+    const char *bol = *p;
+    const char *eol = NULL;
+    while (bol != e) {
+      if (!_eml_parse822_is_lwsp_char(*bol))
+        break;
+      ++bol;
+    }
+    eol = bol;
     while (eol != e) {
       if (eol[0] == '\r' && (eol + 1) != e && eol[1] == '\n')
         break;
       ++eol;
     }
-    _eml_str_append_range (&fb, *p, eol);
+    _eml_str_append_range (&fb, bol, eol);
     *p = eol;
     if (eol == e)
       break;
@@ -949,7 +956,7 @@ void eml_parse(char *message, char **subject, char **from, char **to, time_t *ti
   
   while (_eml_parse822_field_name((const char **)&pmessage, pstop, &pname) == EOK &&
          _eml_parse822_field_body((const char **)&pmessage, pstop, &pbody) == EOK) {
-    /* printf("\033[1;31;48m%s\033[0m: %s\n", pname, pbody); */
+    /* printf("\033[1;31;48m%s\033[0m: \"%s\"\n", pname, pbody); */
     if (strcasecmp(pname, "subject") == 0) {
       if (_eml_rfc2047_decode(pbody, subject) != EOK) {
         free(*subject);
