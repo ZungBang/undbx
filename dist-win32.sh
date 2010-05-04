@@ -45,7 +45,8 @@ configure="$basedir""configure"
 distdir=$(eval "$configure --version" | head -1 | sed s/\ configure\ /-/)
 rm -rf ${distdir} ${distdir}.zip* ${distdir}.tar.gz*
 [ -f "$basedir"README.rst ] \
-    && cp -f "$basedir"README.rst "$basedir"README \
+    && which rst2html > /dev/null \
+    && rst2html "$basedir"README.rst > "$basedir"README.html \
     && which wikir > /dev/null \
     && wikir "$basedir"README.rst > README.wiki 
 mkdir ${distdir} 
@@ -57,7 +58,7 @@ win32_install_base=`cd ${distdir} && pwd | sed -e 's,^[^:\\/]:[\\/],/,'` \
     && make install \
     && find ${distdir} -type f -exec mv -f {} ${distdir} \; \
     && find ${distdir} -depth -type d -empty -exec rmdir -v {} \; \
-    && cp "$basedir"{README,COPYING} ${distdir} \
+    && cp "$basedir"{README.html,COPYING} ${distdir} \
     && zip -rq ${distdir}.zip ${distdir} \
     && sha1sum ${distdir}.zip > ${distdir}.zip.sha1sum \
     && rm -rf ${distdir} \
