@@ -278,6 +278,7 @@ static int _dbx_read_index(dbx_t *dbx, int pos)
   int index_count;
 
   if (pos <= 0 || dbx->file_size <= (unsigned long long)pos) {
+    fprintf(stderr, "warning: DBX file %s is corrupted (bad seek offset %08X) - consider running in recovery mode with --recover command line option\n", dbx->filename, pos);
     return 0;
   }
     
@@ -285,6 +286,10 @@ static int _dbx_read_index(dbx_t *dbx, int pos)
   sys_fread_int(&next_table, dbx->file);
   fseek(dbx->file, 5, SEEK_CUR);
   fread(&ptr_count, 1, 1, dbx->file);
+  if (ptr_count <= 0) {
+    fprintf(stderr, "warning: DBX file %s is corrupted (bad count %d at offset %08X) - consider running in recovery mode with --recover command line option\n", dbx->filename, ptr_count, pos + 8 + 4 + 5);
+    return 0;
+  }
   fseek(dbx->file, 2, SEEK_CUR);
   sys_fread_int(&index_count, dbx->file);
   
@@ -663,6 +668,10 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
     fseek(dbx->file, i + 8, SEEK_SET);
     block_size=0;
     sys_fread_short(&block_size, dbx->file);
+    if (block_size <= 0) {
+      fprintf(stderr, "warning: DBX file %s is corrupted (bad block size at offset %08X) - consider running in recovery mode with --recover command line option\n", dbx->filename, i + 8);
+      break;
+    }
     fseek(dbx->file, 2, SEEK_CUR);
     sys_fread_int(&i, dbx->file);
     total_size += block_size;

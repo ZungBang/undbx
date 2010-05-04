@@ -341,7 +341,7 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
   }
 
   if (!recover && dbx->file_size >= 0x80000000) {
-    fprintf(stderr, "warning: DBX file %s is corrupted (larger than 2GB)\n", dbx_file);
+    fprintf(stderr, "warning: DBX file %s is corrupted (larger than 2GB) - consider running in recovery mode with --recover command line option\n", dbx_file);
   }
 
   eml_dir = strdup(dbx_file);
@@ -429,6 +429,7 @@ int main(int argc, char *argv[])
   int recover = 0;
 
   printf("UnDBX v" DBX_VERSION " (" __DATE__ ")\n");
+  fflush(stdout);
 
   if (argc == 1) {
 #ifdef _WIN32
