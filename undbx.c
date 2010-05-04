@@ -404,7 +404,7 @@ static void _usage(char *prog)
 static void _gui(char *prog)
 {
   char cmd[256];
-  snprintf(cmd, 256, "cscript //Nologo %s/undbx-launcher.vbs", sys_dirname(prog));
+  snprintf(cmd, 256, "mshta %s/undbx.hta", sys_dirname(prog));
   system(cmd);
   exit(EXIT_SUCCESS);
 }

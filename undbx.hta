@@ -1,0 +1,255 @@
+<!--
+    UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
+    Copyright (C) 2008-2010 Avi Rozen <avi.rozen@gmail.com>
+
+    DBX file format parsing code is based on DbxConv - a DBX to MBOX
+    Converter.  Copyright (C) 2008, 2009 Ulrich Krebs
+    <ukrebs@freenet.de>
+
+    RFC-2822 and RFC-2047 parsing code is adapted from GNU Mailutils -
+    a suite of utilities for electronic mail, Copyright (C) 2002,
+    2003, 2004, 2005, 2006, 2009, 2010 Free Software Foundation, Inc.
+
+    This file is part of UnDBX.
+
+    UnDBX is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<HTML>
+<HEAD>
+  <TITLE>UnDBX</TITLE>
+    <HTA:APPLICATION ID="appUnDBX"
+     APPLICATIONNAME="UnDBX"
+     BORDER="dialog"
+     BORDERSTYLE="normal"
+     CAPTION="yes"
+     ICON=""
+     MAXIMIZEBUTTON="no"
+     MINIMIZEBUTTON="yes"
+     SHOWINTASKBAR="yes"
+     SINGLEINSTANCE="no"
+     CONTEXTMENU="no"
+     SYSMENU="yes"
+     VERSION="1.0"
+     WINDOWSTATE="normal"/>
+
+  <SCRIPT LANGUAGE="VBScript">
+    Option Explicit
+    
+    Dim WshShell
+    Dim objFSO
+    Dim strUndbxExe, strStoreFolder, strDesktopFolder, strAppPath
+    
+    Set WshShell = CreateObject("WScript.Shell")
+    Set objFSO = CreateObject("Scripting.FileSystemObject")
+    
+    ' This script is meant to be installed in the same folder as undbx.exe
+    strAppPath = Trim(appUnDBX.commandLine)
+    If Left(strAppPath,1) = """" And Right(strAppPath,1) = """" Then
+       strAppPath = Mid(strAppPath, 2, Len(strAppPath) - 2)
+    End If
+    strUndbxExe = objFSO.GetAbsolutePathName(objFSO.BuildPath(strAppPath, ".."))&"\undbx.exe"
+    If Not objFSO.FileExists(strUndbxExe) Then
+        MsgBox "UnDBX executable not found - " & strUndbxExe, vbCritical, "UnDBX"
+        Self.close
+    End If
+
+    ' Find Outlook Express storage folder
+    On Error Resume Next
+    strStoreFolder = WshShell.ExpandEnvironmentStrings(WshShell.RegRead("HKEY_CURRENT_USER\Identities\" & WshShell.RegRead("HKEY_CURRENT_USER\Identities\Last User ID") & "\Software\Microsoft\Outlook Express\5.0\Store Root"))
+    On Error GoTo 0
+
+    Dim objSFolders
+    Set objSFolders = WshShell.SpecialFolders
+    strDesktopFolder = objSFolders("Desktop")
+    
+    Set objFSO =  Nothing
+    Set WshShell = Nothing
+
+    Sub Window_onLoad
+        txtFileDbx.value = strStoreFolder
+        txtFileEml.value = strDesktopFolder
+        disablePage False
+        window.resizeTo 512,384
+    End Sub
+
+    Sub updateExtractButton
+        btnExtract.disabled = (Len(txtFileDbx.value) = 0)
+        If chkRecover.checked Then
+          btnExtract.value = "Recover!"
+        Else
+          btnExtract.value = "Extract!"
+        End If
+    End Sub
+    
+    Sub txtFileDbx_onKeyUp
+        updateExtractButton
+    End Sub
+
+    Sub txtFileDbx_onChange
+        updateExtractButton
+    End Sub
+
+    Sub disablePage(state)
+        txtFileDbx.disabled = state
+        btnFileDbx.disabled = state
+        chkRecover.disabled = state
+        txtFileEml.disabled = state
+        btnFileEml.disabled = state
+        updateExtractButton
+        If state Then
+            btnExtract.disabled = True
+        End If
+    End Sub
+
+    Sub btnFileDbx_onClick
+        Dim strInFolder
+        disablePage True
+        strInFolder = GetFolder("Please select .dbx INPUT folder:")
+        If strInFolder <> "" Then
+            txtFileDbx.value = strInFolder          
+        End If
+        disablePage False
+    End Sub
+      
+    Sub btnFileEml_onClick
+        Dim strOutFolder
+        disablePage True
+        strOutFolder = GetFolder("Please select .eml OUTPUT folder:")
+        If strOutFolder <> "" Then
+            txtFileEml.value = strOutFolder
+        End If
+        disablePage False
+    End Sub
+
+    Sub chkRecover_onClick
+        updateExtractButton
+    End Sub
+          
+    Sub btnExtract_onClick
+        disablePage True
+        document.body.style.cursor = "wait"
+
+        If isProcessRunning("msimn.exe") Then
+            MsgBox "Please exit Outlook Express first!", vbCritical, "UnDBX"
+            document.body.style.cursor = "default"
+            disablePage False
+            Exit Sub
+        End If
+
+        Dim objApp
+        Dim strInFolder, strOutFolder, strRecover
+        strInFolder = Trim(txtFileDbx.value)
+        If Right(strInFolder,1) = "\" Then
+            strInFolder = Left(strInFolder, Len(strInFolder)-1)
+        End If
+        strOutFolder = Trim(txtFileEml.value)
+        If Right(strOutFolder,1) = "\" Then
+            strOutFolder = Left(strOutFolder, Len(strOutFolder)-1)
+        End If
+        strRecover = ""
+        If chkRecover.checked Then
+            strRecover = "--recover"
+        End If
+        Set objApp = CreateObject("WScript.Shell")
+        ' quoting is a bitch: the following should work even when all file paths contain spaces
+        objApp.Run "cmd /c """"" & strUndbxExe & """ " & strRecover & " """ & strInFolder & """ """ & strOutFolder & """ & pause""", 1, True
+        Set objApp = Nothing
+        document.body.style.cursor = "default"
+        disablePage False
+    End Sub
+
+    Function isProcessRunning(strExe)
+    
+        '
+        ' Check if the specified executable is running
+        '
+        
+        Dim strComputer
+        Dim objWMIService
+        Dim colProcesses
+        
+        strComputer = "."
+        Set objWMIService = GetObject("winmgmts:" _
+                                      & "{impersonationLevel=impersonate}!\\" & strComputer & "\root\cimv2")
+    
+        Set colProcesses = objWMIService.ExecQuery _
+            ("Select * from Win32_Process Where Name = '"&strExe&"'")
+    
+        isProcessRunning = colProcesses.Count > 0
+    
+        Set colProcesses = Nothing
+        Set objWMIService = Nothing
+    
+    End Function
+
+    Function GetFolder(strPrompt)
+    
+        ' 
+        ' Ask user to select a folder. Based on the following article:
+        ' http://www.microsoft.com/technet/scriptcenter/resources/qanda/jun05/hey0617.mspx
+        '
+    
+        Const MY_COMPUTER = &H11&
+        Const WINDOW_HANDLE = 0
+        Const OPTIONS = &H10&
+    
+        Dim objShell
+        Dim objFolder
+        Dim objFolderItem
+        Dim strPath
+        
+        Set objShell = CreateObject("Shell.Application")
+        Set objFolder = objShell.Namespace(MY_COMPUTER)
+        Set objFolderItem = objFolder.Self
+        strPath = objFolderItem.Path
+        
+        Set objFolder = objShell.BrowseForFolder _
+            (WINDOW_HANDLE, strPrompt, OPTIONS, strPath)
+        
+        If objFolder Is Nothing Then
+            GetFolder = ""
+            Exit Function
+        End If
+        
+        Set objFolderItem = objFolder.Self
+        strPath = objFolderItem.Path
+        
+        GetFolder = strPath
+    
+        Set objFolder = Nothing
+        Set objShell = Nothing
+        
+    End Function
+  </SCRIPT>
+</HEAD>
+<BODY SCROLL="no">
+<H2><A HREF="http://code.google.com/p/undbx">UnDBX</A></H2>
+<B>Extract and recover e-mail messages from Outlook Express <CODE>.dbx</CODE> files.</B>
+<BR/>
+Copyright &copy; 2008-2010, by <A HREF="http://machine-cycle.blogspot.com">Avi Rozen</A>.
+<BR/><BR/><BR/>
+Please select source <CODE>.dbx</CODE> folder:<BR/>
+<INPUT TYPE="text" ID="txtFileDbx" SIZE="56" TABINDEX=1>
+<INPUT TYPE="button" ID="btnFileDbx" VALUE="Browse..." TABINDEX=2>
+<BR/>
+<INPUT TYPE="checkbox" ID="chkRecover" TABINDEX=3>
+enable <FONT COLOR="red">Recovery Mode</FONT> (use with corrupted <CODE>.dbx</CODE> files)<BR/>
+<BR/>
+Please select destination folder for extracted <CODE>.eml</CODE> files:<BR/>
+<INPUT TYPE="text" ID="txtFileEml" SIZE="56" TABINDEX=4>
+<INPUT TYPE="button" ID="btnFileEml" VALUE="Browse..." TABINDEX=5>
+<BR/><BR/>
+<INPUT TYPE="submit" ID="btnExtract" VALUE="Extract!" TABINDEX=6>
+</BODY>
+</HTML>

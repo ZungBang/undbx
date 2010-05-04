@@ -2,8 +2,8 @@
 UnDBX
 =====
 
-`UnDBX`_ - Tool to extract e-mail messages from Outlook Express
-``.dbx`` files.
+`UnDBX`_ - Tool to extract, recover and undelete e-mail messages from
+Outlook Express ``.dbx`` files.
 
 .. _UnDBX: http://code.google.com/p/undbx/
 
@@ -15,7 +15,7 @@ DOWNLOAD
 Windows binary and source code archives are available at
 `<http://code.google.com/p/undbx/downloads/list>`_ together with
 corresponding ``sha1sum`` digests, which you can use to verify each
-archive's integrity. 
+archive's integrity.
 
 INSTALLATION
 ------------
@@ -26,58 +26,102 @@ There's no installer or setup program. Simply extract the distribution
 USAGE
 -----
 
-Just double-click either ``undbx`` or ``undbx-launcher`` in the folder
-where the distribution ``.zip`` file was extracted to.
+Just double-click either of the ``undbx`` icons in the folder where
+the distribution ``.zip`` file was extracted to.
 
-You'll be presented twice with a standard folder selection dialog in
-order to select both the input and output folders, and then **UnDBX**
-will be launched to extract the ``.dbx`` files.
+You'll be presented with a dialog box where you can hit an *Extract!*
+button to extract e-mail messages (as individual ``.eml`` files), from
+all of the ``.dbx`` files in the Outlook Express storage folder, to
+corresponding sub-folders on the Desktop.
 
-The input folder holds all the ``.dbx`` files to be processed. This
-will typically be your Outlook Express message store folder (please
-consult Microsoft Knowledge Base article `Q270670`_ for an explantion
-on how to find the location of this folder).
-
-The output folder is where the e-mail messeges will be extracted
-to. **UnDBX** will create a sub-folder under the output directory for
-each ``.dbx`` file found in the input directory, to hold the extracted
-messages.
-
-.. _Q270670: http://support.microsoft.com/kb/270670
-
-ADAVNACED USAGE
----------------
-
-Run the following command in a command shell, to extract e-mail
-messages from all the ``.dbx`` files in ``<DBX-DIRECTORY>`` to
-corresponding sub-directories in ``<OUTPUT-DIRECTORY>``:
-
-::
-
-    undbx <DBX-DIRECTORY> <OUTPUT-DIRECTORY>
-
-You can also specify a single ``.dbx`` file to extract instead of a
-directory.
-
-If the destination directory is omitted, the ``.dbx`` files will be
-extracted to sub-directories in the corrent directory.
+The dialog box also lets you browse and select other input and output
+folders, and optionally enable recovery mode for corrupted ``.dbx``
+files.
 
 OPERATION
 ---------
 
-On first invocation all messages will be extracted as individual
-``.eml`` files. Subsequent invocations will only *update* the output
-directory. Any ``.eml`` files that do not correspond to messages in
-the ``.dbx`` file will be treated as deleted messages and will be
-deleted from the disk. Furthermore, only new messages, that do not
-correspond to files on disk, will be extracted from the ``.dbx`` file.
+When run for the first time, **UnDBX** extracts all the messages as
+individual ``.eml`` files.
+
+In subsequent runs **UnDBX** *synchronizes* the output directory with
+the contents of the ``.dbx`` file:
+
+- new messages in the ``.dbx`` file, that do not correspond to
+  ``.eml`` files, will be extracted from the ``.dbx`` file
+- old ``.eml`` files, that do not correspond to messages in the
+  ``.dbx`` file, will be treated as deleted messages and will be
+  deleted
 
 **UnDBX** was written to facilitate *fast* incremental backup of
 ``.dbx`` files.
 
-**UnDBX** can open corrupted ``.dbx`` files and ``.dbx`` files that
-are larger than 2GB. Depending on how bad the damage is, **UnDBX** may
-or may not be able to extract messages from such files. YMMV.
+The file names of extracted ``.eml`` files are composed from the
+contents of the ``From:``, ``To:`` and ``Subject:`` message
+headers. The modification time of each file is set to match the date
+specified by the ``Date:`` header.
+
+In recovery mode, **UnDBX** can open corrupted ``.dbx`` files
+(including files larger than 2GB) and recover their contents and
+undelete deleted messages.
+
+
+ADVANCED USAGE
+---------------
+
+NORMAL OPERATION
+~~~~~~~~~~~~~~~~
+
+Run the following command in a command shell, to extract e-mail
+messages from all the ``.dbx`` files in ``<DBX-FOLDER>`` to
+corresponding sub-folders in ``<OUTPUT-FOLDER>``:
+
+::
+
+    undbx <DBX-FOLDER> <OUTPUT-FOLDER>
+
+You can also specify a single ``.dbx`` file to extract, instead of a
+folder.
+
+If the destination folder is omitted, the ``.dbx`` files will be
+extracted to sub-folders in the current folder.
+
+RECOVERY MODE
+~~~~~~~~~~~~~
+
+In recovery mode **UnDBX** can analyze and then recover ``.eml``
+messages from corrupted ``.dbx`` files:
+
+::
+
+    undbx --recover <DBX-FOLDER> <OUTPUT-FOLDER>
+
+Again, you can omit the output folder, and you can specify a single
+``.dbx`` file, instead of an input folder.
+
+Recovery mode can be rather slow and it cannot be used incrementally ,
+i.e. **UnDBX** always extracts all the messages it can find, instead
+of just those that have not been extracted yet.
+
+Keep in mind that recovered messages may be corrupted. YMMV.
+
+DELETED MESSAGES
+~~~~~~~~~~~~~~~~
+
+Deleted messages are normally stored by Outlook Express in a special
+folder (e.g. "Deleted Items"), and can thus be restored by extracting
+the corresponding ``.dbx`` file.
+
+As long as the original ``.dbx`` file, from which a message has been
+deleted, has not been compacted or otherwise altered, it still
+contains most of the deleted message's contents.
+
+In recovery mode, **UnDBX** attempts to undelete any deleted message
+fragment it can find.
+
+Note, however, that the first 4 bytes of every 512-byte chunk of each
+deleted message are permanently lost, when the message is deleted. In
+other words, there's no general way to fully recover deleted messages.
 
 
 SOURCE CODE
@@ -141,9 +185,18 @@ CREDITS
 -------
 
 The **UnDBX** .dbx file format parsing code is based on `DbxConv`_ - a
-DBX to MBOX Converter, by Ulrich Krebs <ukrebs@freenet.de>
+DBX to MBOX Converter, Copyright (C) 2008, 2009 Ulrich Krebs
+<ukrebs@freenet.de>
 
-.. _DbxConv: http://freenet-homepage.de/ukrebs/english/dbxconv.html
+**UnDBX** contains `RFC-2822`_, and `RFC-2047`_ parsing code that was
+adapted from `GNU Mailutils`_ - a suite of utilities for electronic
+mail, Copyright (C) 2002, 2003, 2004, 2005, 2006, 2009, 2010 Free
+Software Foundation, Inc.
+
+.. _DbxConv: http://www.ukrebs-software.de/english/dbxconv/dbxconv.html
+.. _RFC-2822: http://www.faqs.org/rfcs/rfc2822
+.. _RFC-2047: http://www.faqs.org/rfcs/rfc2047
+.. _GNU Mailutils: http://www.gnu.org/software/mailutils/
 
 LICENSE
 -------
@@ -159,6 +212,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program. If not, see `<http://www.gnu.org/licenses/>`_.
+along with this program. If not, see
+`<http://www.gnu.org/licenses/>`_.
 
 
