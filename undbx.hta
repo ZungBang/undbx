@@ -48,7 +48,8 @@
     
     Dim WshShell
     Dim objFSO
-    Dim strUndbxExe, strStoreFolder, strDesktopFolder, strAppPath
+    Dim strUndbxExe, strUnbdxVersion
+    Dim strStoreFolder, strDesktopFolder, strAppPath
     
     Set WshShell = CreateObject("WScript.Shell")
     Set objFSO = CreateObject("Scripting.FileSystemObject")
@@ -62,6 +63,12 @@
     If Not objFSO.FileExists(strUndbxExe) Then
         MsgBox "UnDBX executable not found - " & strUndbxExe, vbCritical, "UnDBX"
         Self.close
+    Else
+        Dim objScriptExec, strStdOut
+        Set objScriptExec = WshShell.Exec(strUndbxExe&" --version")
+        strStdOut = objScriptExec.StdOut.ReadAll
+        Set objScriptExec = Nothing
+        strUnbdxVersion = Mid(Trim(strStdOut), 6, 6)
     End If
 
     ' Find Outlook Express storage folder
@@ -79,6 +86,7 @@
     Sub Window_onLoad
         txtFileDbx.value = strStoreFolder
         txtFileEml.value = strDesktopFolder
+        version.innerHTML = strUnbdxVersion
         disablePage False
         window.resizeTo 512,384
     End Sub
@@ -234,7 +242,7 @@
   </SCRIPT>
 </HEAD>
 <BODY SCROLL="no">
-<H2><A HREF="http://code.google.com/p/undbx">UnDBX</A></H2>
+<H2><A HREF="http://code.google.com/p/undbx">UnDBX</A> <SPAN ID="version"></span></H2>
 <B>Extract and recover e-mail messages from Outlook Express <CODE>.dbx</CODE> files.</B>
 <BR/>
 Copyright &copy; 2008-2010, by <A HREF="http://machine-cycle.blogspot.com">Avi Rozen</A>.

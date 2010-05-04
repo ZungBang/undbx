@@ -394,13 +394,21 @@ static char **_get_files(char **dir, int *num_files)
   return files;
 }
 
-#ifndef _WIN32
+
 static void _usage(char *prog)
 {
-  fprintf(stderr, "Usage: %s [--recover] <DBX-DIRECTORY | DBX-FILE> [<OUTPUT-DIRECTORY>]\n", prog);
+  fprintf(stderr,
+          "Usage: %s [<OPTION>] <DBX-DIRECTORY | DBX-FILE> [<OUTPUT-DIRECTORY>]\n"
+          "\n"
+          "Options:\n"
+          "\t--help   \t show this message\n"
+          "\t--version\t show only version string\n"
+          "\t--recover\t enable recovery mode\n",
+          prog);
   exit(EXIT_FAILURE);
 }
-#else
+
+#ifdef _WIN32
 static void _gui(char *prog)
 {
   char cmd[256];
@@ -421,16 +429,28 @@ int main(int argc, char *argv[])
   int recover = 0;
 
   printf("UnDBX v" DBX_VERSION " (" __DATE__ ")\n");
-  
-  if (argc < 2 || argc > 4) {
-#ifndef _WIN32
-    _usage(argv[0]);
-#else
+
+  if (argc == 1) {
+#ifdef _WIN32
     _gui(argv[0]);
+#else
+    _usage(argv[0]);
 #endif
   }
 
+  if (argc == 2) {
+    if (strcmp(argv[1], "--version") == 0)
+      exit(EXIT_SUCCESS);
+    if (strcmp(argv[1], "--help") == 0)
+      _usage(argv[0]);
+  }
+  
+  if (argc > 4)
+    _usage(argv[0]);
+
   recover = strcmp(argv[1], "--recover") == 0? 1:0;
+  if (argc == 4 && !recover)
+    _usage(argv[0]);
   
   dbx_dir = strdup(argv[1+recover]);
   
@@ -445,10 +465,13 @@ int main(int argc, char *argv[])
       fail++;
   }
 
+  if (num_dbx_files > 0)
+    printf("Extracted %d out of %d DBX files.\n", n - fail, n);
+  else
+    fprintf(stderr, "warning: can't find DBX files in \"%s\"\n", dbx_dir);
+  
   sys_glob_free(dbx_files);
   free(dbx_dir);
 
-  printf("Extracted %d out of %d DBX files.\n", n - fail, n);
-  
   return EXIT_SUCCESS;
 }
