@@ -736,8 +736,8 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
   }
 
   snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%.31s_%.31s_%s",
-           from? from:"_(no_sender)",
-           to? to:"(no_receiver)",
+           from? (from[0]=='"'? from+1:from):"_(no_sender)",
+           to? (to[0]=='"'? to+1:to):"(no_receiver)",
            subject? subject:"(no_subject)");
 
   if (message) {
