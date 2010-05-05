@@ -782,6 +782,7 @@ static int _eml_getword (char **pret, const char **pstr, int delim)
   const char *end = strchr (start, delim);
 
   free (*pret);
+  *pret = NULL;
   if (!end)
     return EBAD2047;
   len = end - start;
