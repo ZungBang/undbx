@@ -284,7 +284,7 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
     else {
       /* file on disk not found in dbx: delete from disk */
       sys_delete(eml_dir, eml_files[ifile]);
-      printf("%5.1f%% DELETE: %s\n", 100 * (imessage + 1.0)/dbx->message_count, eml_files[ifile]);
+      printf("       DELETE: %s\n", eml_files[ifile]);
       ifile++;
       no_more_files = (ifile == num_eml_files);
       (*deleted)++;
@@ -341,7 +341,10 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
   }
 
   if (!recover && dbx->file_size >= 0x80000000) {
-    fprintf(stderr, "warning: DBX file %s is corrupted (larger than 2GB) - consider running in recovery mode with --recover command line option\n", dbx_file);
+    fprintf(stderr,
+            "warning: DBX file %s is corrupted (larger than 2GB)\n"
+            "         consider running in recovery mode with --recover command line option\n",
+            dbx_file);
   }
 
   eml_dir = strdup(dbx_file);
