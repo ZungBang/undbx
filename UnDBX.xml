@@ -2,7 +2,7 @@
 <XML_DIZ_INFO>
 	<MASTER_PAD_VERSION_INFO>
 		<MASTER_PAD_VERSION>3.01</MASTER_PAD_VERSION>
-		<MASTER_PAD_EDITOR>GNU Emacs 22.3.1</MASTER_PAD_EDITOR>
+		<MASTER_PAD_EDITOR>GNU Emacs 23.1.1</MASTER_PAD_EDITOR>
 	</MASTER_PAD_VERSION_INFO>
 	<Company_Info>
 		<Company_Name>Machine Cycle</Company_Name>
@@ -33,10 +33,10 @@
 	</Company_Info>
 	<Program_Info>
 		<Program_Name>UnDBX</Program_Name>
-		<Program_Version>0.13</Program_Version>
-		<Program_Release_Month>04</Program_Release_Month>
-		<Program_Release_Day>21</Program_Release_Day>
-		<Program_Release_Year>2009</Program_Release_Year>
+		<Program_Version>0.20</Program_Version>
+		<Program_Release_Month>05</Program_Release_Month>
+		<Program_Release_Day>06</Program_Release_Day>
+		<Program_Release_Year>2010</Program_Release_Year>
 		<Program_Cost_Dollars/>
 		<Program_Cost_Other_Code/>
 		<Program_Cost_Other/>
@@ -50,9 +50,9 @@
 		<Program_Category_Class>Communications::Other E-Mail Tools</Program_Category_Class>
 		<Program_System_Requirements/>
 		<File_Info>
-			<File_Size_Bytes>32378</File_Size_Bytes>
-			<File_Size_K>31.6</File_Size_K>
-			<File_Size_MB>0.03</File_Size_MB>
+			<File_Size_Bytes>45863</File_Size_Bytes>
+			<File_Size_K>44.8</File_Size_K>
+			<File_Size_MB>0.04</File_Size_MB>
 		</File_Info>
 		<Expire_Info>
 			<Has_Expire_Info>N</Has_Expire_Info>
@@ -66,12 +66,12 @@
 	</Program_Info>
 	<Program_Descriptions>
 		<English>
-			<Keywords>DBX, EML, E-Mail, Outlook Express, extract, convert, tool, freeware, free, GPL</Keywords>
+			<Keywords>DBX, EML, E-Mail, Outlook Express, extract, convert, recover, undelete, tool, freeware, free, GPL</Keywords>
 			<Char_Desc_45>Outlook Express .dbx message extraction tool</Char_Desc_45>
-			<Char_Desc_80>Tool to extract e-mail messages from Outlook Express .dbx files.</Char_Desc_80>
-			<Char_Desc_250>Tool to extract e-mail messages from Outlook Express .dbx files.</Char_Desc_250>
-			<Char_Desc_450>Tool to extract e-mail messages from Outlook Express .dbx files. On first invocation all messages will be extracted as individual .eml files. Subsequent invocations will only update the output directory: .eml files that do not correspond to messages in the .dbx file will be treated as deleted messages and will be deleted from the disk. Furthermore, only new messages, that do not correspond to files on disk, will be extracted from the .dbx file.</Char_Desc_450>
-			<Char_Desc_2000>Tool to extract e-mail messages from Outlook Express .dbx files. On first invocation all messages will be extracted as individual .eml files. Subsequent invocations will only update the output directory: .eml files that do not correspond to messages in the .dbx file will be treated as deleted messages and will be deleted from the disk. Furthermore, only new messages, that do not correspond to files on disk, will be extracted from the .dbx file. UnDBX was written to facilitate fast incremental backup of .dbx files. UnDBX can open corrupted .dbx files and .dbx files that are larger than 2GB, but, depending on how bad the damage is, it may not be able to extract messages from such files.</Char_Desc_2000>
+			<Char_Desc_80>Tool to extract and recover e-mail messages from Outlook Express .dbx files.</Char_Desc_80>
+			<Char_Desc_250>Tool to extract, recover and undelete e-mail messages from Outlook Express .dbx files.</Char_Desc_250>
+			<Char_Desc_450>Tool to extract, recover and undelete e-mail messages from Outlook Express .dbx files. On first run all messages are extracted as individual .eml files. Subsequent runs only update the output directory with new messages, and delete old .eml files that correspond to deleted messages in the .dbx file. Corrupted .dbx files can be opened in recovery mode.</Char_Desc_450>
+			<Char_Desc_2000>Tool to extract, recover and undelete e-mail messages from Outlook Express .dbx files. On first run all messages are extracted as individual .eml files. Subsequent runs only update the output directory with new messages, and delete old .eml files that correspond to deleted messages in the .dbx file. Corrupted .dbx files (including files larger than 2GB) can be opened in recovery mode, in order to recover messages and partially undelete deleted messages. The success of recovery depends on the type and level of .dbx file corruption.</Char_Desc_2000>
 		</English>
 	</Program_Descriptions>
 	<Web_Info>
@@ -83,7 +83,7 @@
 			<Application_XML_File_URL>http://zungbang.googlepages.com/UnDBX.xml</Application_XML_File_URL>
 		</Application_URLs>
 		<Download_URLs>
-			<Primary_Download_URL>http://undbx.googlecode.com/files/undbx-0.13.zip</Primary_Download_URL>
+			<Primary_Download_URL>http://undbx.googlecode.com/files/undbx-0.20.zip</Primary_Download_URL>
 			<Secondary_Download_URL/>
 			<Additional_Download_URL_1/>
 			<Additional_Download_URL_2/>
