@@ -401,7 +401,7 @@ static char **_get_files(char **dir, int *num_files)
 static void _usage(char *prog)
 {
   fprintf(stderr,
-          "Usage: %s [<OPTION>] <DBX-DIRECTORY | DBX-FILE> [<OUTPUT-DIRECTORY>]\n"
+          "Usage: %s [<OPTION>] <DBX-FOLDER | DBX-FILE> [<OUTPUT-FOLDER>]\n"
           "\n"
           "Options:\n"
           "\t--help   \t show this message\n"

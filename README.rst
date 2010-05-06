@@ -44,8 +44,8 @@ OPERATION
 When run for the first time, **UnDBX** extracts all the messages as
 individual ``.eml`` files.
 
-In subsequent runs **UnDBX** *synchronizes* the output directory with
-the contents of the ``.dbx`` file:
+In subsequent runs **UnDBX** *synchronizes* the output folder with the
+contents of the ``.dbx`` file:
 
 - new messages in the ``.dbx`` file, that do not correspond to
   ``.eml`` files, will be extracted from the ``.dbx`` file
@@ -146,8 +146,8 @@ COMPILING
 
 ::
 
-    tar -xvzf undbx-0.14.tar.gz
-    cd undbx-0.14
+    tar -xvzf undbx-0.20.tar.gz
+    cd undbx-0.20
     ./configure
     make
     make install
@@ -161,7 +161,7 @@ running
 
 ::
 
-    ./autogen.sh
+    ./autoreconf -vfi
 
 
 .. _Cygwin: http://www.cygwin.com

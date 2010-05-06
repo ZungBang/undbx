@@ -38,16 +38,14 @@
 win32_host=${1:-i586-mingw32msvc}
 basedir=${0/%dist-win32.sh}
 cd "$basedir"
-[ -e ./autogen.sh ] && ./autogen.sh
+autoreconf -vfi && find -maxdepth 1 -size 0 -exec rm -v {} \;
 cd -
 make distclean
 configure="$basedir""configure"
 distdir=$(eval "$configure --version" | head -1 | sed s/\ configure\ /-/)
 rm -rf ${distdir} ${distdir}.zip* ${distdir}.tar.gz*
 [ -f "$basedir"README.rst ] \
-    && which rst2html > /dev/null \
     && rst2html "$basedir"README.rst > "$basedir"README.html \
-    && which wikir > /dev/null \
     && wikir "$basedir"README.rst > README.wiki 
 mkdir ${distdir} 
 win32_install_base=`cd ${distdir} && pwd | sed -e 's,^[^:\\/]:[\\/],/,'` \
