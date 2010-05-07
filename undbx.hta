@@ -48,7 +48,7 @@
     
     Dim WshShell
     Dim objFSO
-    Dim strUndbxExe, strUnbdxVersion
+    Dim strUndbxExe, strUndbxVersion
     Dim strStoreFolder, strDesktopFolder, strAppPath
     
     Set WshShell = CreateObject("WScript.Shell")
@@ -68,7 +68,11 @@
         Set objScriptExec = WshShell.Exec(strUndbxExe&" --version")
         strStdOut = objScriptExec.StdOut.ReadAll
         Set objScriptExec = Nothing
-        strUnbdxVersion = Mid(Trim(strStdOut), 6, 6)
+        strUndbxVersion = Mid(Trim(strStdOut), 7, 5)
+        If Len(strUndbxVersion) <> 5 Then
+            MsgBox "Cannot determine version of UnDBX", vbCritical, "UnDBX"
+            Self.close
+        End If
     End If
 
     ' Find Outlook Express storage folder
@@ -86,7 +90,7 @@
     Sub Window_onLoad
         txtFileDbx.value = strStoreFolder
         txtFileEml.value = strDesktopFolder
-        version.innerHTML = strUnbdxVersion
+        version.innerHTML = strUndbxVersion
         disablePage False
         window.resizeTo 512,384
     End Sub
