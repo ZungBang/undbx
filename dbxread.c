@@ -674,11 +674,11 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
     fseek(dbx->file, i + 8, SEEK_SET);
     block_size=0;
     sys_fread_short(&block_size, dbx->file);
-    if (block_size <= 0) {
+    if (block_size <= 0 || block_size > 0x200) {
       fprintf(stderr,
-              "warning: DBX file %s is corrupted (bad block size at offset %08X)\n"
+              "warning: DBX file %s is corrupted (bad block size %04X at offset %08X)\n"
               "         consider running in recovery mode with --recover command line option\n",
-              dbx->filename, i + 8);
+              dbx->filename, block_size, i + 8);
       break;
     }
     fseek(dbx->file, 2, SEEK_CUR);
