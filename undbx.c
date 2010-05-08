@@ -312,18 +312,18 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
   dbx_t *dbx = NULL;
   char *eml_dir = NULL;
   char *cwd = NULL;
-  int rc = 0;
+  int rc = -1;
 
   cwd = sys_getcwd();
   if (cwd == NULL) {
     fprintf(stderr, "error: can't get current working directory\n");
-    return -1;
+    goto UNDBX_DONE;
   }
 
   rc = sys_chdir(dbx_dir);
   if (rc != 0) {
     fprintf(stderr, "error: can't chdir to %s\n", dbx_dir);
-    return -1;
+    goto UNDBX_DONE;
   }
   
   dbx = dbx_open(dbx_file, recover);
@@ -332,12 +332,14 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
 
   if (dbx == NULL) {
     fprintf(stderr, "warning: can't open DBX file %s\n", dbx_file);
-    return -1;
+    rc = -1;
+    goto UNDBX_DONE;
   }
 
   if (!recover && dbx->type != DBX_TYPE_EMAIL) {
     fprintf(stderr, "warning: DBX file %s does not contain messages\n", dbx_file);
-    return -1;
+    rc = -1;
+    goto UNDBX_DONE;
   }
 
   if (!recover && dbx->file_size >= 0x80000000) {
@@ -352,13 +354,13 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
   rc = sys_mkdir(out_dir, eml_dir);
   if (rc != 0) {
     fprintf(stderr, "error: can't create directory %s/%s\n", out_dir, eml_dir);
-    return -1;
+    goto UNDBX_DONE;
   }
 
   rc = sys_chdir(out_dir);
   if (rc != 0) {
     fprintf(stderr, "error: can't chdir to %s\n", out_dir);
-    return -1;
+    goto UNDBX_DONE;
   }
 
   if (recover)
@@ -366,16 +368,15 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
   else
     _extract(dbx, out_dir, eml_dir, &saved, &deleted, &errors);
 
+ UNDBX_DONE:  
   free(eml_dir);
   eml_dir = NULL;
-  
   dbx_close(dbx);
-
   sys_chdir(cwd);
   free(cwd);
   cwd = NULL;
 
-  return 0;
+  return rc;
 }
 
 static char **_get_files(char **dir, int *num_files)

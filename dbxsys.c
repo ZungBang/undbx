@@ -222,6 +222,8 @@ int sys_mkdir(char *parent, char *dir)
 
 int sys_chdir(char *dir)
 {
+  if (dir == NULL)
+    return -1;
   return _sys_chdir(dir);
 }
 
