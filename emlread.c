@@ -807,6 +807,7 @@ static int _eml_rfc2047_decode (const char *input, char **ptostr)
   char *fromcode = NULL;
   char *encoding_type = NULL;
   char *encoded_text = NULL;
+  char *decoded_text = NULL;
 
 #define BUFINC 128  
 #define CHKBUF(count) do {                              \
@@ -845,8 +846,11 @@ static int _eml_rfc2047_decode (const char *input, char **ptostr)
       size_t nbytes = 0;
       size_t size;
       const char *sp = fromstr + 2;
-      char *decoded_text = NULL;
           
+      if (decoded_text)
+        free(decoded_text);
+      decoded_text = NULL;
+      
       status = _eml_getword (&fromcode, &sp, '?');
       if (status)
         break;
@@ -880,7 +884,7 @@ static int _eml_rfc2047_decode (const char *input, char **ptostr)
         break;
       }
           
-      if (status != 0)
+      if (status != 0) 
         break;
 
       if (decoded) {
@@ -914,6 +918,9 @@ static int _eml_rfc2047_decode (const char *input, char **ptostr)
       buffer[bufpos++] = *fromstr++;
     }
   }
+  
+  if (decoded_text)
+    free(decoded_text);
   
   if (*fromstr) {
     size_t len = strlen (fromstr);
