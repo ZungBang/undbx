@@ -399,9 +399,14 @@ static char **_get_files(char **dir, int *num_files)
 }
 
 
-static void _usage(char *prog)
+static void _usage(char *prog, int rc)
 {
-  fprintf(stderr,
+  FILE *stream = (rc == EXIT_SUCCESS)? stdout:stderr;
+  
+  if (rc != EXIT_SUCCESS)
+    fprintf(stream, "error: bad command line\n");
+  
+  fprintf(stream,
           "Usage: %s [<OPTION>] <DBX-FOLDER | DBX-FILE> [<OUTPUT-FOLDER>]\n"
           "\n"
           "Options:\n"
@@ -409,7 +414,8 @@ static void _usage(char *prog)
           "\t--version\t show only version string\n"
           "\t--recover\t enable recovery mode\n",
           prog);
-  exit(EXIT_FAILURE);
+  
+  exit(rc);
 }
 
 #ifdef _WIN32
@@ -439,23 +445,22 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
     _gui(argv[0]);
 #else
-    _usage(argv[0]);
+    _usage(argv[0], EXIT_SUCCESS);
 #endif
   }
 
   if (argc == 2) {
     if (strcmp(argv[1], "--version") == 0)
       exit(EXIT_SUCCESS);
-    if (strcmp(argv[1], "--help") == 0)
-      _usage(argv[0]);
+    _usage(argv[0], (strcmp(argv[1], "--help") == 0)? EXIT_SUCCESS:EXIT_FAILURE);
   }
   
   if (argc > 4)
-    _usage(argv[0]);
+    _usage(argv[0], EXIT_FAILURE);
 
   recover = strcmp(argv[1], "--recover") == 0? 1:0;
   if (argc == 4 && !recover)
-    _usage(argv[0]);
+    _usage(argv[0], EXIT_FAILURE);
   
   dbx_dir = strdup(argv[1+recover]);
   
