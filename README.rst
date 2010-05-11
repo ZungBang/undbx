@@ -23,20 +23,29 @@ INSTALLATION
 There's no installer or setup program. Simply extract the distribution
 ``.zip`` file to some folder.
 
+You should end up with several files/icons in that folder:
+
+- the **UnDBX** executable ``undbx.exe``
+- the **UnDBX** HTML application ``undbx.hta``, which serves as its
+  graphical user interface
+- this ``README`` in HTML format
+- the GPL v3 license (``COPYING``)
+
 USAGE
 -----
 
-Just double-click either of the ``undbx`` icons in the folder where
-the distribution ``.zip`` file was extracted to.
+Just double-click either of the ``undbx`` icons that you've extracted
+from the distribution ``.zip`` file. A simple dialog box should
+appear.
 
-You'll be presented with a dialog box where you can hit an *Extract!*
-button to extract e-mail messages (as individual ``.eml`` files), from
-all of the ``.dbx`` files in the Outlook Express storage folder, to
+If you hit the *Extract!* button in the dialog box, **UnDBX** will
+extract e-mail messages (as individual ``.eml`` files), from all of
+the ``.dbx`` files in the Outlook Express storage folder, to
 corresponding sub-folders on the Desktop.
 
-The dialog box also lets you browse and select other input and output
-folders, and optionally enable recovery mode for corrupted ``.dbx``
-files.
+The same dialog box also lets you browse and select other input and
+output folders, and optionally enable recovery mode for corrupted
+``.dbx`` files.
 
 OPERATION
 ---------
@@ -48,12 +57,12 @@ In subsequent runs **UnDBX** *synchronizes* the output folder with the
 contents of the ``.dbx`` file:
 
 - new messages in the ``.dbx`` file, that do not correspond to
-  ``.eml`` files, will be extracted from the ``.dbx`` file
-- old ``.eml`` files, that do not correspond to messages in the
+  existing ``.eml`` files, will be extracted
+- existing ``.eml`` files, that do not correspond to messages in the
   ``.dbx`` file, will be treated as deleted messages and will be
   deleted
 
-**UnDBX** was written to facilitate *fast* incremental backup of
+This way **UnDBX** can facilitate *fast* incremental backup of
 ``.dbx`` files.
 
 The file names of extracted ``.eml`` files are composed from the
@@ -72,7 +81,7 @@ ADVANCED USAGE
 NORMAL OPERATION
 ~~~~~~~~~~~~~~~~
 
-Run the following command in a command shell, to extract e-mail
+Run the following command in a command-line window, to extract e-mail
 messages from all the ``.dbx`` files in ``<DBX-FOLDER>`` to
 corresponding sub-folders in ``<OUTPUT-FOLDER>``:
 
@@ -80,48 +89,54 @@ corresponding sub-folders in ``<OUTPUT-FOLDER>``:
 
     undbx <DBX-FOLDER> <OUTPUT-FOLDER>
 
-You can also specify a single ``.dbx`` file to extract, instead of a
+You may also specify a single ``.dbx`` file to extract, instead of a
 folder.
 
 If the destination folder is omitted, the ``.dbx`` files will be
-extracted to sub-folders in the current folder.
+extracted to sub-folders in the current working folder.
 
 RECOVERY MODE
 ~~~~~~~~~~~~~
 
-In recovery mode **UnDBX** can analyze and then recover ``.eml``
-messages from corrupted ``.dbx`` files:
+In recovery mode, **UnDBX** attempts to recover e-mail messages from
+corrupted ``.dbx`` files:
 
 ::
 
     undbx --recover <DBX-FOLDER> <OUTPUT-FOLDER>
 
-Again, you can omit the output folder, and you can specify a single
+Again, you may omit the output folder, and you may specify a single
 ``.dbx`` file, instead of an input folder.
 
-Recovery mode can be rather slow and it cannot be used incrementally ,
-i.e. **UnDBX** always extracts all the messages it can find, instead
-of just those that have not been extracted yet.
+During the recovery process **UnDBX** scans the ``.dbx`` file for
+e-mail message fragments, and collects them into ``.eml``
+files. Recovery can take a long while to complete, so please be
+patient.
 
-Keep in mind that recovered messages may be corrupted. YMMV.
+In recovery mode **UnDBX** always extracts all the messages it can
+find, instead of extracting only those messages that have not been
+extracted yet.
+
+Keep in mind that recovered messages may be corrupted.
 
 DELETED MESSAGES
 ~~~~~~~~~~~~~~~~
 
 Deleted messages are normally stored by Outlook Express in a special
 folder (e.g. "Deleted Items"), and can thus be restored by extracting
-the corresponding ``.dbx`` file.
+them from the corresponding ``.dbx`` file.
 
-As long as the original ``.dbx`` file, from which a message has been
-deleted, has not been compacted or otherwise altered, it still
-contains most of the deleted message's contents.
+Most of the contents of deleted messages still exists in the original
+``.dbx`` file, as long it has not been compacted or otherwise
+modified. 
 
 In recovery mode, **UnDBX** attempts to undelete any deleted message
 fragment it can find.
 
-Note, however, that the first 4 bytes of every 512-byte chunk of each
-deleted message are permanently lost, when the message is deleted. In
-other words, there's no general way to fully recover deleted messages.
+NOTE: Outlook Express overwrites the first 4 bytes of every 512-byte
+chunk of each deleted message. In other words, some data is
+permanently lost when a message is deleted and *there's no general way
+to fully recover deleted messages*.
 
 
 SOURCE CODE
@@ -161,7 +176,7 @@ running
 
 ::
 
-    ./autoreconf -vfi
+    autoreconf -vfi
 
 
 .. _Cygwin: http://www.cygwin.com
