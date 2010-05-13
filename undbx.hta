@@ -96,7 +96,7 @@
     End Sub
 
     Sub updateExtractButton
-        btnExtract.disabled = (Len(txtFileDbx.value) = 0)
+        btnExtract.disabled = (Len(txtFileDbx.value) = 0) Or (Len(txtFileEml.value) = 0)
         If chkRecover.checked Then
           btnExtract.value = "Recover!"
         Else
@@ -109,6 +109,14 @@
     End Sub
 
     Sub txtFileDbx_onChange
+        updateExtractButton
+    End Sub
+
+    Sub txtFileEml_onKeyUp
+        updateExtractButton
+    End Sub
+
+    Sub txtFileEml_onChange
         updateExtractButton
     End Sub
 
