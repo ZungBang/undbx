@@ -449,18 +449,20 @@ int main(int argc, char *argv[])
 #endif
   }
 
-  if (argc == 2) {
+  /* process options, if any */
+  if (strncmp(argv[1], "--", 2) == 0) {
     if (strcmp(argv[1], "--version") == 0)
       exit(EXIT_SUCCESS);
-    _usage(argv[0], (strcmp(argv[1], "--help") == 0)? EXIT_SUCCESS:EXIT_FAILURE);
+    if (strcmp(argv[1], "--help") == 0)
+      _usage(argv[0], EXIT_SUCCESS);
+    if (strcmp(argv[1], "--recover") == 0) {
+      recover = 1;
+      if (argc == 2 || argc > 4)
+        _usage(argv[0], EXIT_FAILURE);
+    }
+    else
+      _usage(argv[0], EXIT_FAILURE);
   }
-  
-  if (argc > 4)
-    _usage(argv[0], EXIT_FAILURE);
-
-  recover = strcmp(argv[1], "--recover") == 0? 1:0;
-  if (argc == 4 && !recover)
-    _usage(argv[0], EXIT_FAILURE);
   
   dbx_dir = strdup(argv[1+recover]);
   
