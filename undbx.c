@@ -422,7 +422,7 @@ static void _usage(char *prog, int rc)
 static void _gui(char *prog)
 {
   char cmd[256];
-  snprintf(cmd, 256, "mshta %s/undbx.hta", sys_dirname(prog));
+  snprintf(cmd, 256, "mshta \"%s/undbx.hta\"", sys_dirname(prog));
   system(cmd);
   exit(EXIT_SUCCESS);
 }
