@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([undbx], [0.20], [avi.rozen@gmail.com])
+AC_INIT([undbx], [0.21], [avi.rozen@gmail.com])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([undbx.c])
