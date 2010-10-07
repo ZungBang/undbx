@@ -92,7 +92,7 @@
         txtFileEml.value = strDesktopFolder
         version.innerHTML = strUndbxVersion
         disablePage False
-        window.resizeTo 512,384
+        window.resizeTo spanFileDbx.offsetWidth * 1.5, spanFileDbx.offsetHeight * 18
     End Sub
 
     Sub updateExtractButton
@@ -253,14 +253,14 @@
     End Function
   </SCRIPT>
 </HEAD>
-<BODY SCROLL="no">
+<BODY SCROLL="no" NOWRAP>
 <H2><A HREF="http://code.google.com/p/undbx">UnDBX</A> <SPAN ID="version"></span></H2>
 <B>Extract and recover e-mail messages from Outlook Express <CODE>.dbx</CODE> files.</B>
 <BR/>
 Copyright &copy; 2008-2010, by <A HREF="http://machine-cycle.blogspot.com">Avi Rozen</A>.
 <BR/><BR/><BR/>
 Please select source <CODE>.dbx</CODE> folder:<BR/>
-<INPUT TYPE="text" ID="txtFileDbx" SIZE="56" TABINDEX=1>
+<SPAN ID="spanFileDbx"><INPUT TYPE="text" ID="txtFileDbx" SIZE="56" TABINDEX=1></SPAN>
 <INPUT TYPE="button" ID="btnFileDbx" VALUE="Browse..." TABINDEX=2>
 <BR/>
 <INPUT TYPE="checkbox" ID="chkRecover" TABINDEX=3>
