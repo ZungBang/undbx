@@ -92,7 +92,7 @@
         txtFileEml.value = strDesktopFolder
         version.innerHTML = strUndbxVersion
         disablePage False
-        window.resizeTo spanFileDbx.offsetWidth * 1.5, spanFileDbx.offsetHeight * 18
+        window.resizeTo blurb.offsetWidth * 1.1, blurb.offsetHeight * 20 
     End Sub
 
     Sub updateExtractButton
@@ -254,22 +254,24 @@
   </SCRIPT>
 </HEAD>
 <BODY SCROLL="no" NOWRAP>
-<H2><A HREF="http://code.google.com/p/undbx">UnDBX</A> <SPAN ID="version"></span></H2>
-<B>Extract and recover e-mail messages from Outlook Express <CODE>.dbx</CODE> files.</B>
+<FONT FACE="Times New Roman">
+<CENTER><H2><A HREF="http://code.google.com/p/undbx">UnDBX</A> <SPAN ID="version"></SPAN></H2></CENTER>
+<SPAN ID="blurb"><B>Extract and recover e-mail messages from Outlook Express <CODE>.dbx</CODE> files.</B></SPAN>
 <BR/>
 Copyright &copy; 2008-2010, by <A HREF="http://machine-cycle.blogspot.com">Avi Rozen</A>.
 <BR/><BR/><BR/>
 Please select source <CODE>.dbx</CODE> folder:<BR/>
-<SPAN ID="spanFileDbx"><INPUT TYPE="text" ID="txtFileDbx" SIZE="56" TABINDEX=1></SPAN>
-<INPUT TYPE="button" ID="btnFileDbx" VALUE="Browse..." TABINDEX=2>
+<INPUT TYPE="text" ID="txtFileDbx" SIZE="56" TABINDEX=1>
+&nbsp;&nbsp;<INPUT TYPE="button" ID="btnFileDbx" VALUE="Browse..." TABINDEX=2>
 <BR/>
 <INPUT TYPE="checkbox" ID="chkRecover" TABINDEX=3>
 enable <FONT COLOR="red">Recovery Mode</FONT> (use with corrupted <CODE>.dbx</CODE> files)<BR/>
 <BR/>
 Please select destination folder for extracted <CODE>.eml</CODE> files:<BR/>
 <INPUT TYPE="text" ID="txtFileEml" SIZE="56" TABINDEX=4>
-<INPUT TYPE="button" ID="btnFileEml" VALUE="Browse..." TABINDEX=5>
-<BR/><BR/>
-<INPUT TYPE="submit" ID="btnExtract" VALUE="Extract!" TABINDEX=6>
+&nbsp;&nbsp;<INPUT TYPE="button" ID="btnFileEml" VALUE="Browse..." TABINDEX=5>
+<BR/><BR/><BR/>
+<CENTER><INPUT TYPE="submit" ID="btnExtract" VALUE="Extract!" TABINDEX=6></CENTER>
+</FONT>
 </BODY>
 </HTML>
