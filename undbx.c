@@ -419,10 +419,23 @@ static void _usage(char *prog, int rc)
 }
 
 #ifdef _WIN32
+#include <windows.h>
 static void _gui(char *prog)
 {
+  FILE *rfp = NULL;
+  char fn[256];
   char cmd[256];
-  snprintf(cmd, 256, "mshta \"%s/undbx.hta\"", sys_dirname(prog));
+  snprintf(fn, 256, "%s/undbx.hta", sys_dirname(prog));
+  rfp = fopen(fn, "r");
+  if (rfp == NULL) {
+    char msg[256];
+    snprintf(msg, 256, "Error: %s not found.\nPlease extract ALL files from undbx-%s.zip, and try again.",
+             fn, DBX_VERSION);
+    MessageBox(NULL, msg, "UnDBX", MB_ICONERROR|MB_OK);
+    exit(EXIT_FAILURE);
+  }
+  fclose(rfp);
+  snprintf(cmd, 256, "mshta \"%s\"", fn);
   system(cmd);
   exit(EXIT_SUCCESS);
 }
