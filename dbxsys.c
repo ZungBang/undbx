@@ -139,7 +139,22 @@ static int _sys_mkdir(char *path)
 
 static int _sys_chdir(char *dir)
 {
-  return _chdir(dir);
+  int rc;
+  /* _chdir doesn't if dir is just C: - must add \ */
+  int l = strlen(dir);
+  char *path = strdup(dir);
+  if (path == NULL)
+    return -1;
+  if (path[l-1] == ':') {
+    path = (char *)realloc(path, l + 2);
+    if (path == NULL)
+      return -1;
+    path[l] = '\\';
+    path[l+1] = '\0';
+  }
+  rc = _chdir(path);
+  free(path);
+  return rc;
 }
 
 static char *_sys_getcwd(void)
