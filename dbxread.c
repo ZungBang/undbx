@@ -60,7 +60,7 @@ static char *_dbx_read_string(FILE *file, int offset)
   c[255]='\0';
 
   do {
-    fread(c, 1, 255, file);
+    sys_fread(c, 1, 255, file);
     l = strlen(c);
     s = realloc(s, n + l + 1);
     strncpy(s + n, c, l);
@@ -288,7 +288,7 @@ static int _dbx_read_index(dbx_t *dbx, int pos)
   fseek(dbx->file, pos + 8, SEEK_SET);
   sys_fread_int(&next_table, dbx->file);
   fseek(dbx->file, 5, SEEK_CUR);
-  fread(&ptr_count, 1, 1, dbx->file);
+  sys_fread(&ptr_count, 1, 1, dbx->file);
   if (ptr_count <= 0) {
     fprintf(stderr,
             "warning: DBX file %s is corrupted (bad count %d at offset %08X)\n"
@@ -643,7 +643,7 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
   fseek(dbx->file, index + 4, SEEK_SET);
   sys_fread_int(&size, dbx->file);
   fseek(dbx->file, 2, SEEK_CUR);
-  fread(&count, 1, 1, dbx->file);
+  sys_fread(&count, 1, 1, dbx->file);
   fseek(dbx->file, 1, SEEK_CUR);
 
   for (i = 0; i < count; i++) {
@@ -685,7 +685,7 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
     sys_fread_int(&i, dbx->file);
     total_size += block_size;
     buf = realloc(buf, total_size + 1);
-    fread(buf + total_size - block_size, block_size, 1, dbx->file); 
+    sys_fread(buf + total_size - block_size, block_size, 1, dbx->file);
   }
 
   if (buf)
@@ -718,7 +718,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     fsize = pfragment->size <= 0x200? pfragment->size : 0x200;
     fseek(dbx->file, pfragment->offset + 16, SEEK_SET);
     message = (char *)realloc(message, size + fsize + 1);
-    fread(message + size, fsize, 1, dbx->file);
+    sys_fread(message + size, fsize, 1, dbx->file);
     /* each deleted fragment starts with bad 4 bytes
        (it's set to the offset of the previous fragment)
        so we replace them with 4 dashes, which eases
