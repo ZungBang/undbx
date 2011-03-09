@@ -63,7 +63,7 @@ static dbx_save_status_t _save_message(char *dir, char *filename, char *message,
     return DBX_SAVE_ERROR;
   }
 
-  eml = fopen(filename, "wb");
+  eml = fopen(filename, "w+b");
 
   sys_chdir(cwd);
   free(cwd);
