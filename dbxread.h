@@ -105,10 +105,15 @@ extern "C" {
     char *account_registry_key;
   } dbx_info_t;
 
+  typedef struct {
+    int recover;
+    int offset;
+  } dbx_options_t;
+  
   typedef struct dbx_s {
     char *filename;
     FILE *file;
-    int recover;
+    dbx_options_t *options;
     unsigned long long file_size;
     dbx_type_t type;
     int message_count;
@@ -117,7 +122,7 @@ extern "C" {
     dbx_chains_t scan[DBX_SCAN_NUM];
   } dbx_t;
 
-  dbx_t *dbx_open(char *filename, int recover);
+  dbx_t *dbx_open(char *filename, dbx_options_t *options);
   void dbx_close(dbx_t *dbx);
   char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize);
   char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned int *psize, time_t *ptimestamp, char **pfilename);

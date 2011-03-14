@@ -304,7 +304,7 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
   sys_glob_free(eml_files);
 }
 
-static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
+static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, dbx_options_t *options)
 {
   int deleted = 0; 
   int saved = 0;
@@ -327,7 +327,7 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
     goto UNDBX_DONE;
   }
   
-  dbx = dbx_open(dbx_file, recover);
+  dbx = dbx_open(dbx_file, options);
   
   sys_chdir(cwd);
 
@@ -337,13 +337,13 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
     goto UNDBX_DONE;
   }
 
-  if (!recover && dbx->type != DBX_TYPE_EMAIL) {
+  if (!options->recover && dbx->type != DBX_TYPE_EMAIL) {
     fprintf(stderr, "warning: DBX file %s does not contain messages\n", dbx_file);
     rc = -1;
     goto UNDBX_DONE;
   }
 
-  if (!recover && dbx->file_size >= 0x80000000) {
+  if (!options->recover && dbx->file_size >= 0x80000000) {
     fprintf(stderr,
             "warning: DBX file %s is corrupted (larger than 2GB)\n"
             "         consider running in recovery mode with --recover command line option\n",
@@ -364,7 +364,7 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
     goto UNDBX_DONE;
   }
 
-  if (recover)
+  if (options->recover)
     _recover(dbx, out_dir, eml_dir, &saved, &errors);
   else
     _extract(dbx, out_dir, eml_dir, &saved, &deleted, &errors);
@@ -413,7 +413,8 @@ static void _usage(char *prog, int rc)
           "Options:\n"
           "\t-h, --help   \t show this message\n"
           "\t-v, --version\t show only version string\n"
-          "\t-r, --recover\t enable recovery mode\n",
+          "\t-r, --recover\t enable recovery mode\n"
+          "\t-o, --offset \t use dbx file offset as eml file name\n",
           prog);
   
   exit(rc);
@@ -450,7 +451,7 @@ int main(int argc, char *argv[])
   char *dbx_dir = NULL;
   char *out_dir = NULL;
   int num_dbx_files = 0;
-  int recover = 0;
+  dbx_options_t options = { 0, 0 };
 
   printf("UnDBX v" DBX_VERSION " (" __DATE__ ")\n");
   fflush(stdout);
@@ -469,6 +470,7 @@ int main(int argc, char *argv[])
       {"help", no_argument, NULL, 'h'},
       {"version", no_argument, NULL, 'v'},
       {"recover", no_argument, NULL, 'r'},
+      {"offset", no_argument, NULL, 'o'},
       {0, 0, 0, 0}
     };
     
@@ -484,7 +486,10 @@ int main(int argc, char *argv[])
       exit(EXIT_SUCCESS);
       break;
     case 'r':
-      recover = 1;
+      options.recover = 1;
+      break;
+    case 'o':
+      options.offset = 1;
       break;
     default:
       break;
@@ -503,7 +508,7 @@ int main(int argc, char *argv[])
 
   dbx_files = _get_files(&dbx_dir, &num_dbx_files);
   for(n = 0; n < num_dbx_files; n++) {
-    if (_undbx(dbx_dir, out_dir, dbx_files[n], recover))
+    if (_undbx(dbx_dir, out_dir, dbx_files[n], &options))
       fail++;
   }
 

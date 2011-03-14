@@ -89,6 +89,49 @@ static int _dbx_read_int(FILE *file, int offset, int value)
   return val;
 }
 
+static int _dbx_read_msg_offset(dbx_t *dbx, int msg_number)
+{
+  int size = 0;
+  int index = 0;
+  int value = 0;
+  unsigned char type = 0;
+  int msg_offset = 0;
+  int msg_offset_ptr = 0;
+  char count = 0;
+  int i = 0;
+
+  index = dbx->info[msg_number].index;
+
+  fseek(dbx->file, index + 4, SEEK_SET);
+  sys_fread_int(&size, dbx->file);
+  fseek(dbx->file, 2, SEEK_CUR);
+  sys_fread(&count, 1, 1, dbx->file);
+  fseek(dbx->file, 1, SEEK_CUR);
+
+  for (i = 0; i < count; i++) {
+    sys_fread_int((int *)&value, dbx->file);
+    type = value & 0xFF;
+    value = (value >> 8) & 0xFFFFFF;                
+
+    if (type == 0x84) {
+      msg_offset = value;
+      break;
+    }
+    if (type == 0x04) {
+      msg_offset_ptr = index + 12 + value + 4 * count;
+      break;
+    }
+  }
+        
+  if (msg_offset == 0 && msg_offset_ptr != 0) {
+    fseek(dbx->file, msg_offset_ptr, SEEK_SET);
+    sys_fread_int(&msg_offset, dbx->file);
+  }
+
+  return msg_offset;
+}
+
+
 static void _dbx_sanitize_filename(char *filename)
 {
   char *c = NULL;
@@ -119,7 +162,7 @@ static void _dbx_set_filename(dbx_info_t *info)
           (unsigned int) (info->receive_create_time & 0xFFFFFFFFULL),
           (unsigned int) (info->send_create_time & 0xFFFFFFFFULL));
   strcat(filename, suffix);
-
+  
   _dbx_sanitize_filename(filename);
   
   info->filename = strdup(filename);
@@ -265,7 +308,15 @@ static void _dbx_read_info(dbx_t *dbx)
       }
       pos += 4;
     }
-    _dbx_set_filename(dbx->info + i);
+
+    if (dbx->options->offset) {
+      char filename[DBX_MAX_FILENAME];
+      sprintf(filename, "%08X.eml", (unsigned int) _dbx_read_msg_offset(dbx, i));
+      dbx->info[i].filename = strdup(filename);
+    }
+    else {
+      _dbx_set_filename(dbx->info + i);
+    }
   }
 }
 
@@ -529,7 +580,7 @@ static void _dbx_init(dbx_t *dbx)
     dbx->type = DBX_TYPE_UNKNOWN;
   }
 
-  if (dbx->recover) {
+  if (dbx->options->recover) {
     /* we ignore file type in recovery mode */
     _dbx_scan(dbx);
   }
@@ -542,7 +593,7 @@ static void _dbx_init(dbx_t *dbx)
 }
 
 
-dbx_t *dbx_open(char *filename, int recover)
+dbx_t *dbx_open(char *filename, dbx_options_t *options)
 {
   dbx_t *dbx = (dbx_t *) calloc(1, sizeof(dbx_t));
 
@@ -561,7 +612,7 @@ dbx_t *dbx_open(char *filename, int recover)
       else {
         dbx->filename = strdup(filename);
         dbx->file_size = sys_filesize(".", filename);
-        dbx->recover = recover;
+        dbx->options = options;
         _dbx_init(dbx);
       }
     }
@@ -620,13 +671,6 @@ void dbx_close(dbx_t *dbx)
 
 char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
 {
-  int index = 0;
-  int size = 0;
-  char count = 0;
-  int msg_offset = 0;
-  int msg_offset_ptr = 0;
-  int value = 0;
-  unsigned char type = 0;
   unsigned int total_size = 0;
   short block_size = 0;
   int i = 0;
@@ -638,36 +682,7 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
   if (dbx == NULL || msg_number >= dbx->message_count)
     return NULL;
 
-  index = dbx->info[msg_number].index;
-
-  fseek(dbx->file, index + 4, SEEK_SET);
-  sys_fread_int(&size, dbx->file);
-  fseek(dbx->file, 2, SEEK_CUR);
-  sys_fread(&count, 1, 1, dbx->file);
-  fseek(dbx->file, 1, SEEK_CUR);
-
-  for (i = 0; i < count; i++) {
-    sys_fread_int((int *)&value, dbx->file);
-    type = value & 0xFF;
-    value = (value >> 8) & 0xFFFFFF;                
-
-    if (type == 0x84) {
-      msg_offset = value;
-      break;
-    }
-    if (type == 0x04) {
-      msg_offset_ptr = index + 12 + value + 4 * count;
-      break;
-    }
-  }
-        
-  if (msg_offset == 0 && msg_offset_ptr != 0) {
-    fseek(dbx->file, msg_offset_ptr, SEEK_SET);
-    sys_fread_int(&msg_offset, dbx->file);
-  }
-
-  buf = NULL;
-  i = msg_offset;
+  i = _dbx_read_msg_offset(dbx, msg_number);
   total_size = 0;
   
   while (i != 0) {
@@ -744,10 +759,20 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     eml_parse(message, &subject, &from, &to, &timestamp);
   }
 
-  snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%.31s_%.31s_%s",
-           from? (from[0]=='"'? from+1:from):"_(no_sender)",
-           to? (to[0]=='"'? to+1:to):"(no_receiver)",
-           subject? subject:"(no_subject)");
+  if (dbx->options->offset) {
+    sprintf(filename, "%08X.eml", dbx->scan[chain_index].chains[msg_number]->offset);
+  }
+  else {
+    snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%.31s_%.31s_%s",
+             from? (from[0]=='"'? from+1:from):"_(no_sender)",
+             to? (to[0]=='"'? to+1:to):"(no_receiver)",
+             subject? subject:"(no_subject)");
+    
+    sprintf(suffix, ".%08X.eml", dbx->scan[chain_index].chains[msg_number]->offset);
+    strcat(filename, suffix);
+    
+    _dbx_sanitize_filename(filename);
+  }
 
   if (message) {
     free(subject);
@@ -755,11 +780,6 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     free(from);
   }
   
-  sprintf(suffix, ".%08X.eml", dbx->scan[chain_index].chains[msg_number]->offset);
-  strcat(filename, suffix);
-
-  _dbx_sanitize_filename(filename);
-
   *pfilename = strdup(filename);
   *ptimestamp = timestamp;
   *psize = size;
