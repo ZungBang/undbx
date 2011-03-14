@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <getopt.h>
 #include "dbxread.h"
 
 typedef enum { DBX_SAVE_NOOP, DBX_SAVE_OK, DBX_SAVE_ERROR } dbx_save_status_t;
@@ -410,9 +411,9 @@ static void _usage(char *prog, int rc)
           "Usage: %s [<OPTION>] <DBX-FOLDER | DBX-FILE> [<OUTPUT-FOLDER>]\n"
           "\n"
           "Options:\n"
-          "\t--help   \t show this message\n"
-          "\t--version\t show only version string\n"
-          "\t--recover\t enable recovery mode\n",
+          "\t-h, --help   \t show this message\n"
+          "\t-v, --version\t show only version string\n"
+          "\t-r, --recover\t enable recovery mode\n",
           prog);
   
   exit(rc);
@@ -462,25 +463,41 @@ int main(int argc, char *argv[])
 #endif
   }
 
-  /* process options, if any */
-  if (strncmp(argv[1], "--", 2) == 0) {
-    if (strcmp(argv[1], "--version") == 0)
-      exit(EXIT_SUCCESS);
-    if (strcmp(argv[1], "--help") == 0)
+  while (1) {
+    int c;
+    static struct option long_options[] = {
+      {"help", no_argument, NULL, 'h'},
+      {"version", no_argument, NULL, 'v'},
+      {"recover", no_argument, NULL, 'r'},
+      {0, 0, 0, 0}
+    };
+    
+    c = getopt_long(argc, argv, "hvr", long_options, NULL);
+    if (c == -1)
+      break;
+    
+    switch (c) {
+    case 'h':
       _usage(argv[0], EXIT_SUCCESS);
-    if (strcmp(argv[1], "--recover") == 0) {
+      break;
+    case 'v':
+      exit(EXIT_SUCCESS);
+      break;
+    case 'r':
       recover = 1;
-      if (argc == 2 || argc > 4)
-        _usage(argv[0], EXIT_FAILURE);
+      break;
+    default:
+      break;
     }
-    else
-      _usage(argv[0], EXIT_FAILURE);
   }
   
-  dbx_dir = strdup(argv[1+recover]);
+  if (argc - optind < 1 || argc - optind > 2) 
+    _usage(argv[0], EXIT_FAILURE);
+
+  dbx_dir = strdup(argv[optind]);
   
-  if (argc == 3+recover)
-    out_dir = argv[2+recover];
+  if (argc - optind == 2)
+    out_dir = argv[optind + 1];
   else
     out_dir = ".";
 
