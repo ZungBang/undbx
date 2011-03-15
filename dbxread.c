@@ -309,7 +309,7 @@ static void _dbx_read_info(dbx_t *dbx)
       pos += 4;
     }
 
-    if (dbx->options->offset) {
+    if (dbx->options->safe_mode) {
       char filename[DBX_MAX_FILENAME];
       sprintf(filename, "%08X.eml", (unsigned int) _dbx_read_msg_offset(dbx, i));
       dbx->info[i].filename = strdup(filename);
@@ -759,7 +759,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     eml_parse(message, &subject, &from, &to, &timestamp);
   }
 
-  if (dbx->options->offset) {
+  if (dbx->options->safe_mode) {
     sprintf(filename, "%08X.eml", dbx->scan[chain_index].chains[msg_number]->offset);
   }
   else {

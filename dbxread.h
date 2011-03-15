@@ -107,7 +107,7 @@ extern "C" {
 
   typedef struct {
     int recover;
-    int offset;
+    int safe_mode;
   } dbx_options_t;
   
   typedef struct dbx_s {

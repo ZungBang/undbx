@@ -411,10 +411,10 @@ static void _usage(char *prog, int rc)
           "Usage: %s [<OPTION>] <DBX-FOLDER | DBX-FILE> [<OUTPUT-FOLDER>]\n"
           "\n"
           "Options:\n"
-          "\t-h, --help   \t show this message\n"
-          "\t-v, --version\t show only version string\n"
-          "\t-r, --recover\t enable recovery mode\n"
-          "\t-o, --offset \t use dbx file offset as eml file name\n",
+          "\t-h, --help     \t show this message\n"
+          "\t-v, --version  \t show only version string\n"
+          "\t-r, --recover  \t enable recovery mode\n"
+          "\t-s, --safe-mode\t generate locale-safe file names\n",
           prog);
   
   exit(rc);
@@ -470,7 +470,7 @@ int main(int argc, char *argv[])
       {"help", no_argument, NULL, 'h'},
       {"version", no_argument, NULL, 'v'},
       {"recover", no_argument, NULL, 'r'},
-      {"offset", no_argument, NULL, 'o'},
+      {"safe-mode", no_argument, NULL, 's'},
       {0, 0, 0, 0}
     };
     
@@ -488,8 +488,8 @@ int main(int argc, char *argv[])
     case 'r':
       options.recover = 1;
       break;
-    case 'o':
-      options.offset = 1;
+    case 's':
+      options.safe_mode = 1;
       break;
     default:
       break;
