@@ -414,7 +414,8 @@ static void _usage(char *prog, int rc)
           "\t-h, --help     \t show this message\n"
           "\t-v, --version  \t show only version string\n"
           "\t-r, --recover  \t enable recovery mode\n"
-          "\t-s, --safe-mode\t generate locale-safe file names\n",
+          "\t-s, --safe-mode\t generate locale-safe file names\n"
+          "\t-d, --debug    \t output debug messages\n",
           prog);
   
   exit(rc);
@@ -471,10 +472,11 @@ int main(int argc, char *argv[])
       {"version", no_argument, NULL, 'v'},
       {"recover", no_argument, NULL, 'r'},
       {"safe-mode", no_argument, NULL, 's'},
+      {"debug", no_argument, NULL, 'd'},
       {0, 0, 0, 0}
     };
     
-    c = getopt_long(argc, argv, "hvr", long_options, NULL);
+    c = getopt_long(argc, argv, "hvrsd", long_options, NULL);
     if (c == -1)
       break;
     
@@ -490,6 +492,9 @@ int main(int argc, char *argv[])
       break;
     case 's':
       options.safe_mode = 1;
+      break;
+    case 'd':
+      options.debug = 1;
       break;
     default:
       break;
