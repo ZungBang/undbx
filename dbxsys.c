@@ -1,6 +1,6 @@
 /*
     UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
-    Copyright (C) 2008-2010 Avi Rozen <avi.rozen@gmail.com>
+    Copyright (C) 2008-2011 Avi Rozen <avi.rozen@gmail.com>
 
     DBX file format parsing code is based on DbxConv - a DBX to MBOX
     Converter.  Copyright (C) 2008, 2009 Ulrich Krebs
@@ -316,10 +316,15 @@ char *sys_dirname(char *path)
   return dirname(path);
 }
 
+size_t sys_fread(void *ptr, size_t size, size_t nitems, FILE *stream)
+{
+  return fread(ptr, size, nitems, stream);
+}
+
 void sys_fread_long_long(long long *value, FILE *file)
 {
 #ifndef WORDS_BIGENDIAN
-  fread(value, 1, sizeof(long long), file);
+  sys_fread(value, 1, sizeof(long long), file);
 #else
   /* the following code is endianness neutral */
   long long llw = 0;
@@ -338,7 +343,7 @@ void sys_fread_long_long(long long *value, FILE *file)
 void sys_fread_int(int *value, FILE *file)
 {
 #ifndef WORDS_BIGENDIAN
-  fread(value, 1, sizeof(int), file);  
+  sys_fread(value, 1, sizeof(int), file);
 #else
   /* the following code is endianness neutral */
   int dw = 0;
@@ -353,7 +358,7 @@ void sys_fread_int(int *value, FILE *file)
 void sys_fread_short(short *value, FILE *file)
 {
 #ifndef WORDS_BIGENDIAN
-  fread(value, 1, sizeof(short), file);  
+  sys_fread(value, 1, sizeof(short), file);
 #else
   /* the following code is endianness neutral */
   short w = 0;

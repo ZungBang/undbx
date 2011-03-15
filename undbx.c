@@ -1,6 +1,6 @@
 /*
     UnDBX - Tool to extract e-mail messages from Outlook Express DBX files.
-    Copyright (C) 2008-2010 Avi Rozen <avi.rozen@gmail.com>
+    Copyright (C) 2008-2011 Avi Rozen <avi.rozen@gmail.com>
 
     DBX file format parsing code is based on DbxConv - a DBX to MBOX
     Converter.  Copyright (C) 2008, 2009 Ulrich Krebs
@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <getopt.h>
 #include "dbxread.h"
 
 typedef enum { DBX_SAVE_NOOP, DBX_SAVE_OK, DBX_SAVE_ERROR } dbx_save_status_t;
@@ -63,7 +64,7 @@ static dbx_save_status_t _save_message(char *dir, char *filename, char *message,
     return DBX_SAVE_ERROR;
   }
 
-  eml = fopen(filename, "wb");
+  eml = fopen(filename, "w+b");
 
   sys_chdir(cwd);
   free(cwd);
@@ -303,7 +304,7 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
   sys_glob_free(eml_files);
 }
 
-static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
+static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, dbx_options_t *options)
 {
   int deleted = 0; 
   int saved = 0;
@@ -326,7 +327,7 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
     goto UNDBX_DONE;
   }
   
-  dbx = dbx_open(dbx_file, recover);
+  dbx = dbx_open(dbx_file, options);
   
   sys_chdir(cwd);
 
@@ -336,13 +337,13 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
     goto UNDBX_DONE;
   }
 
-  if (!recover && dbx->type != DBX_TYPE_EMAIL) {
+  if (!options->recover && dbx->type != DBX_TYPE_EMAIL) {
     fprintf(stderr, "warning: DBX file %s does not contain messages\n", dbx_file);
     rc = -1;
     goto UNDBX_DONE;
   }
 
-  if (!recover && dbx->file_size >= 0x80000000) {
+  if (!options->recover && dbx->file_size >= 0x80000000) {
     fprintf(stderr,
             "warning: DBX file %s is corrupted (larger than 2GB)\n"
             "         consider running in recovery mode with --recover command line option\n",
@@ -363,7 +364,7 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, int recover)
     goto UNDBX_DONE;
   }
 
-  if (recover)
+  if (options->recover)
     _recover(dbx, out_dir, eml_dir, &saved, &errors);
   else
     _extract(dbx, out_dir, eml_dir, &saved, &deleted, &errors);
@@ -410,9 +411,11 @@ static void _usage(char *prog, int rc)
           "Usage: %s [<OPTION>] <DBX-FOLDER | DBX-FILE> [<OUTPUT-FOLDER>]\n"
           "\n"
           "Options:\n"
-          "\t--help   \t show this message\n"
-          "\t--version\t show only version string\n"
-          "\t--recover\t enable recovery mode\n",
+          "\t-h, --help     \t show this message\n"
+          "\t-v, --version  \t show only version string\n"
+          "\t-r, --recover  \t enable recovery mode\n"
+          "\t-s, --safe-mode\t generate locale-safe file names\n"
+          "\t-d, --debug    \t output debug messages\n",
           prog);
   
   exit(rc);
@@ -449,7 +452,7 @@ int main(int argc, char *argv[])
   char *dbx_dir = NULL;
   char *out_dir = NULL;
   int num_dbx_files = 0;
-  int recover = 0;
+  dbx_options_t options = { 0, 0 };
 
   printf("UnDBX v" DBX_VERSION " (" __DATE__ ")\n");
   fflush(stdout);
@@ -462,31 +465,55 @@ int main(int argc, char *argv[])
 #endif
   }
 
-  /* process options, if any */
-  if (strncmp(argv[1], "--", 2) == 0) {
-    if (strcmp(argv[1], "--version") == 0)
-      exit(EXIT_SUCCESS);
-    if (strcmp(argv[1], "--help") == 0)
+  while (1) {
+    int c;
+    static struct option long_options[] = {
+      {"help", no_argument, NULL, 'h'},
+      {"version", no_argument, NULL, 'v'},
+      {"recover", no_argument, NULL, 'r'},
+      {"safe-mode", no_argument, NULL, 's'},
+      {"debug", no_argument, NULL, 'd'},
+      {0, 0, 0, 0}
+    };
+    
+    c = getopt_long(argc, argv, "hvrsd", long_options, NULL);
+    if (c == -1)
+      break;
+    
+    switch (c) {
+    case 'h':
       _usage(argv[0], EXIT_SUCCESS);
-    if (strcmp(argv[1], "--recover") == 0) {
-      recover = 1;
-      if (argc == 2 || argc > 4)
-        _usage(argv[0], EXIT_FAILURE);
+      break;
+    case 'v':
+      exit(EXIT_SUCCESS);
+      break;
+    case 'r':
+      options.recover = 1;
+      break;
+    case 's':
+      options.safe_mode = 1;
+      break;
+    case 'd':
+      options.debug = 1;
+      break;
+    default:
+      break;
     }
-    else
-      _usage(argv[0], EXIT_FAILURE);
   }
   
-  dbx_dir = strdup(argv[1+recover]);
+  if (argc - optind < 1 || argc - optind > 2) 
+    _usage(argv[0], EXIT_FAILURE);
+
+  dbx_dir = strdup(argv[optind]);
   
-  if (argc == 3+recover)
-    out_dir = argv[2+recover];
+  if (argc - optind == 2)
+    out_dir = argv[optind + 1];
   else
     out_dir = ".";
 
   dbx_files = _get_files(&dbx_dir, &num_dbx_files);
   for(n = 0; n < num_dbx_files; n++) {
-    if (_undbx(dbx_dir, out_dir, dbx_files[n], recover))
+    if (_undbx(dbx_dir, out_dir, dbx_files[n], &options))
       fail++;
   }
 
