@@ -416,6 +416,7 @@ static void _dbx_scan(dbx_t *dbx)
      mingw gcc (4.4.2) doesn't seem to like long longs
   */
   for (i = 0; i < (unsigned int)dbx->file_size; i += 4) {
+    int deleted = 0;
     dbx_chains_t *chains = NULL;
     dbx_fragment_t *other = NULL;
     dbx_fragment_t *fragment = NULL;
@@ -483,7 +484,8 @@ static void _dbx_scan(dbx_t *dbx)
     }
     
     /* add fragment to fragment list */
-    chains = dbx->scan + ((header[(header_start + 1) & 7] == 0x1FC)? 1:0);
+    deleted = (header[(header_start + 1) & 7] == 0x1FC)? 1:0;
+    chains = dbx->scan + deleted;
     
     chains->fragments = (dbx_fragment_t *)realloc(chains->fragments,
                                                   sizeof(dbx_fragment_t) * (chains->fragment_count + 1));
@@ -492,6 +494,7 @@ static void _dbx_scan(dbx_t *dbx)
     fragment->next = -1;
     fragment->offset = header[header_start];
     fragment->offset_next = header[(header_start + 3) & 7];
+    fragment->offset_prev = header[(header_start + 4) & 7]; /* only valid for deleted messages */
     fragment->size = header[(header_start + 2) & 7];
     chains->fragment_count++;
     chains->count++;
@@ -503,7 +506,8 @@ static void _dbx_scan(dbx_t *dbx)
       other = fragment - 1;
       while (other >= chains->fragments) {
         /* avoid fragments that have already been used, to avoid loops */
-        if (other->prev < 0 && fragment->offset_next == other->offset) {
+        if (other->prev < 0 && fragment->offset_next == other->offset &&
+            (!deleted || other->offset_prev == fragment->offset)) {
           fragment->next = other - chains->fragments;
           other->prev = chains->fragment_count - 1;
           chains->count--;
@@ -519,7 +523,8 @@ static void _dbx_scan(dbx_t *dbx)
     other = fragment - 1;
     while (other >= chains->fragments) {
       /* avoid fragments that have already been used, to avoid loops */
-      if (other->next < 0 && fragment->offset == other->offset_next) {
+      if (other->next < 0 && fragment->offset == other->offset_next &&
+          (!deleted || fragment->offset_prev == other->offset)) {
         fragment->prev = other - chains->fragments;
         other->next = chains->fragment_count - 1;
         chains->count--;
