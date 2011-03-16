@@ -416,8 +416,9 @@ static void _dbx_scan(dbx_t *dbx)
      mingw gcc (4.4.2) doesn't seem to like long longs
   */
   for (i = 0; i < (unsigned int)dbx->file_size; i += 4) {
+    int deleted = 0;
     dbx_chains_t *chains = NULL;
-//  dbx_fragment_t *other = NULL;               // no longer used
+    dbx_fragment_t *other = NULL;
     dbx_fragment_t *fragment = NULL;
 
     if (i - pi >= di) {
@@ -483,17 +484,12 @@ static void _dbx_scan(dbx_t *dbx)
     }
     
     /* add fragment to fragment list */
-    chains = dbx->scan + ((header[(header_start + 1) & 7] == 0x1FC)? 1:0);
+    deleted = ((header[(header_start + 1) & 7] == 0x1FC)? 1:0);
+    chains = dbx->scan + deleted;
 
-    /* realloc takes time when the list is large and can't be extended (e.g. when not
-    at end of heap).  To reduce the overhead here, each realloc increases the size by
-    4096 entries rather than just one entry. */
-
-//  chains->fragments = (dbx_fragment_t *)realloc(chains->fragments,
-//                                                sizeof(dbx_fragment_t) * (chains->fragment_count + 1));
     if ((chains->fragment_count % 4096) == 0)
       chains->fragments = (dbx_fragment_t *)realloc(chains->fragments,
-                          sizeof(dbx_fragment_t) * (chains->fragment_count + 4096));
+                                                    sizeof(dbx_fragment_t) * (chains->fragment_count + 4096));
 
 
     fragment = chains->fragments + chains->fragment_count;
@@ -505,41 +501,24 @@ static void _dbx_scan(dbx_t *dbx)
     chains->fragment_count++;
     chains->count++;
 
-    /* The two scans below can take time if the file is badly fragmented.  They've been
-    replaced by a scan done after the file has been scanned. */
-
-    /* find next fragment, if we already passed it, starting with the previous fragment,
-       which is it, usually
-    */
-//  if (fragment->offset_next && fragment->offset_next < fragment->offset)
-//   {
-//    other = fragment - 1;
-//    while (other >= chains->fragments) {
-//      /* avoid fragments that have already been used, to avoid loops */
-//      if (other->prev < 0 && fragment->offset_next == other->offset) {
-//        fragment->next = other - chains->fragments;
-//        other->prev = chains->fragment_count - 1;
-//        chains->count--;
-//        break;
-//      }
-//      other--;
-//    }
-//   }
-
-    /* find prev fragment, starting with the previous fragment,
-       which is it, usually
-    */
-//  other = fragment - 1;
-//  while (other >= chains->fragments) {
-//    /* avoid fragments that have already been used, to avoid loops */
-//    if (other->next < 0 && fragment->offset == other->offset_next) {
-//      fragment->prev = other - chains->fragments;
-//      other->next = chains->fragment_count - 1;
-//      chains->count--;
-//      break;
-//    }
-//    other--;
-//  }
+    /* check if previous fragment is next fragment, if we already passed it */
+    other = fragment - 1;
+    if (other >= chains->fragments) {
+      if (fragment->offset_next &&
+          fragment->offset_next < fragment->offset &&
+          other->prev < 0 && /* avoid already used fragments */
+          fragment->offset_next == other->offset) {
+        fragment->next = other - chains->fragments;
+        other->prev = chains->fragment_count - 1;
+        chains->count--;
+      }
+      else if (other->next < 0 &&
+               fragment->offset == other->offset_next) {
+        fragment->prev = other - chains->fragments;
+        other->next = chains->fragment_count - 1;
+        chains->count--;
+      }
+    }
 
     /* skip contents of fragment */
     i += 0x200 - 4;
@@ -550,57 +529,45 @@ static void _dbx_scan(dbx_t *dbx)
 
   printf("\b\b\b\b\b\b100.0%%\n");
 
-    /*  Load all prev and next links.  This code replaces the two scans above.  */
+  printf ("------ Chaining fragments into messages ... ");
 
-  printf ("Loading prev & next links...");
-
-  for (j = 0; j < DBX_SCAN_NUM; j++)
-   {
-    if (dbx->scan[j].count)
-     {
-        dbx_chains_t    *chains = NULL;
-        dbx_fragment_t  *other = NULL;
-        dbx_fragment_t  *fragment = NULL;
-        unsigned int    k0, k1, k2;
+  for (j = 0; j < DBX_SCAN_NUM; j++) {
+    if (dbx->scan[j].count) {
+      dbx_chains_t *chains = NULL;
+      dbx_fragment_t *other = NULL;
+      dbx_fragment_t *fragment = NULL;
+      unsigned int k0, k1, k2;
 
       chains = &dbx->scan[j];
-      for (i = 0; i < chains->fragment_count; i++)
-       {
+      for (i = 0; i < chains->fragment_count; i++) {
         fragment = chains->fragments + i;
-        if (fragment->offset_next == 0)
+        if (fragment->offset_next == 0 || fragment->next >= 0)
           continue;
-
-        /*  The fragment we're looking for is often immediately after the
-        current one.  The search below checks this one spot and then does
-        a binary search on the list.  */
 
         k0 = 0;
         k2 = chains->fragment_count;
-        for (k1 = i + (i < k2);  k0 < k2;  k1 = (k0 + k2) / 2)
-         {
+        for (k1 = i + (i < k2)? 1:0;  k0 < k2;  k1 = (k0 + k2) / 2) {
           other = chains->fragments + k1;
-          if (other->offset < fragment->offset_next)
-           {
+          if (other->offset < fragment->offset_next) {
             if (k1 == k0)
               break;
             k0 = k1;
             continue;
-           }
-          if (other->offset > fragment->offset_next)
-           {
+          }
+          if (other->offset > fragment->offset_next) {
             k2 = k1;
             continue;
-           }
-          if (other->prev >= 0)                 // Oops, already used
+          }
+          if (other->prev >= 0)
             break;
           fragment->next = k1;
           other->prev = i;
           chains->count--;
           break;
-         }
-       }
-     }
-   }
+        }
+      }
+    }
+  }
   printf ("done\n");
 
   /* collect the fragments that start messages chains
