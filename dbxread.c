@@ -497,6 +497,7 @@ static void _dbx_scan(dbx_t *dbx)
     fragment->next = -1;
     fragment->offset = header[header_start];
     fragment->offset_next = header[(header_start + 3) & 7];
+    fragment->offset_prev = header[(header_start + 4) & 7]; /* only valid for deleted messages */
     fragment->size = header[(header_start + 2) & 7];
     chains->fragment_count++;
     chains->count++;
@@ -507,13 +508,15 @@ static void _dbx_scan(dbx_t *dbx)
       if (fragment->offset_next &&
           fragment->offset_next < fragment->offset &&
           other->prev < 0 && /* avoid already used fragments */
-          fragment->offset_next == other->offset) {
+          fragment->offset_next == other->offset &&
+          (!deleted || other->offset_prev == fragment->offset)) {
         fragment->next = other - chains->fragments;
         other->prev = chains->fragment_count - 1;
         chains->count--;
       }
       else if (other->next < 0 &&
-               fragment->offset == other->offset_next) {
+               fragment->offset == other->offset_next &&
+               (!deleted || fragment->offset_prev == other->offset)) {
         fragment->prev = other - chains->fragments;
         other->next = chains->fragment_count - 1;
         chains->count--;
@@ -559,6 +562,8 @@ static void _dbx_scan(dbx_t *dbx)
             continue;
           }
           if (other->prev >= 0)
+            break;
+          if (j == 1 && other->offset_prev != fragment->offset)
             break;
           fragment->next = k1;
           other->prev = i;

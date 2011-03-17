@@ -65,6 +65,7 @@ extern "C" {
   typedef struct dbx_fragment_s {
     unsigned int offset;
     unsigned int offset_next;
+    unsigned int offset_prev;
     unsigned int size;
     int prev;    
     int next;
