@@ -311,7 +311,10 @@ static void _dbx_read_info(dbx_t *dbx)
 
     if (dbx->options->safe_mode) {
       char filename[DBX_MAX_FILENAME];
-      sprintf(filename, "%08X.eml", (unsigned int) _dbx_read_msg_offset(dbx, i));
+      int msg_offset = _dbx_read_msg_offset(dbx, i);
+      if (msg_offset == 0)  /* message only in index, not downloaded yet */
+        msg_offset = dbx->info[i].index;
+      sprintf(filename, "%08X.eml", (unsigned int) msg_offset);
       dbx->info[i].filename = strdup(filename);
     }
     else {
@@ -484,7 +487,7 @@ static void _dbx_scan(dbx_t *dbx)
     }
     
     /* add fragment to fragment list */
-    deleted = ((header[(header_start + 1) & 7] == 0x1FC)? 1:0);
+    deleted = (header[(header_start + 1) & 7] == 0x1FC)? 1:0;
     chains = dbx->scan + deleted;
 
     if ((chains->fragment_count % 4096) == 0)
@@ -635,7 +638,8 @@ static void _dbx_init(dbx_t *dbx)
     _dbx_read_indexes(dbx);
     _dbx_read_info(dbx);
     qsort(dbx->info, dbx->message_count, sizeof(dbx_info_t), (dbx_cmpfunc_t) _dbx_info_cmp);
-    _dbx_uniquify_filenames(dbx);
+    if (!dbx->options->safe_mode) /* filenames should already be unique in safe mode */
+      _dbx_uniquify_filenames(dbx);
   }
 }
 
