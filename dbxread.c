@@ -309,10 +309,12 @@ static void _dbx_read_info(dbx_t *dbx)
       pos += 4;
     }
 
+    dbx->info[i].offset = _dbx_read_msg_offset(dbx, i);
+    
     if (dbx->options->safe_mode) {
       char filename[DBX_MAX_FILENAME];
-      int msg_offset = _dbx_read_msg_offset(dbx, i);
-      if (msg_offset == 0)  /* message only in index, not downloaded yet */
+      int msg_offset = dbx->info[i].offset;
+      if (dbx->info[i].offset == 0)  /* message only in index, not downloaded yet */
         msg_offset = dbx->info[i].index;
       sprintf(filename, "%08X.eml", (unsigned int) msg_offset);
       dbx->info[i].filename = strdup(filename);
@@ -700,7 +702,7 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
   if (dbx == NULL || msg_number >= dbx->message_count)
     return NULL;
 
-  i = _dbx_read_msg_offset(dbx, msg_number);
+  i = dbx->info[msg_number].offset;
   total_size = 0;
   
   while (i != 0) {

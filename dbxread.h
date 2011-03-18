@@ -80,6 +80,7 @@ extern "C" {
 
   typedef struct dbx_info_s {
     int index;
+    int offset;
     char *filename;
     dbx_mask_t valid;
     unsigned int message_index;
@@ -109,6 +110,7 @@ extern "C" {
   typedef struct {
     int recover;
     int safe_mode;
+    int ignore0;
     int debug;
   } dbx_options_t;
   
