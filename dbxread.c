@@ -761,6 +761,12 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     */
     if (chain_index) 
       memset(message + size, '-', 4);
+    if (dbx->options->debug) 
+      printf("%08X: %08X %08X %04X\n",
+             size,
+             pfragment->offset,
+             pfragment->offset_next,
+             fsize);
     size += fsize;
   } 
 
