@@ -446,7 +446,7 @@ static void _dbx_scan(dbx_t *dbx)
     /* message fragment header signature:
        =================================
        1st word value equals offset into file 
-       2nd word is 0x200 or 0x210
+       2nd word is 0x200
        3rd word is fragment length: must be positive, but not more than 0x200 
        4th word value is the file offset of the next fragment, or 0 if last
 
@@ -462,8 +462,7 @@ static void _dbx_scan(dbx_t *dbx)
                and are a multiple of 4 and that fragment does not point to itself
     */
     if (header[header_start] != i ||
-        (!((header[(header_start + 1) & 7] == 0x200 ||
-            header[(header_start + 1) & 7] == 0x210) &&
+        (!(header[(header_start + 1) & 7] == 0x200 &&
            header[(header_start + 2) & 7] > 0 &&
            header[(header_start + 2) & 7] <= 0x200 &&
            header[(header_start + 3) & 7] < dbx->file_size &&
