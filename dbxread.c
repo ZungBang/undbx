@@ -309,10 +309,12 @@ static void _dbx_read_info(dbx_t *dbx)
       pos += 4;
     }
 
+    dbx->info[i].offset = _dbx_read_msg_offset(dbx, i);
+    
     if (dbx->options->safe_mode) {
       char filename[DBX_MAX_FILENAME];
-      int msg_offset = _dbx_read_msg_offset(dbx, i);
-      if (msg_offset == 0)  /* message only in index, not downloaded yet */
+      int msg_offset = dbx->info[i].offset;
+      if (dbx->info[i].offset == 0)  /* message only in index, not downloaded yet */
         msg_offset = dbx->info[i].index;
       sprintf(filename, "%08X.eml", (unsigned int) msg_offset);
       dbx->info[i].filename = strdup(filename);
@@ -444,7 +446,7 @@ static void _dbx_scan(dbx_t *dbx)
     /* message fragment header signature:
        =================================
        1st word value equals offset into file 
-       2nd word is 0x200 or 0x210
+       2nd word is 0x200
        3rd word is fragment length: must be positive, but not more than 0x200 
        4th word value is the file offset of the next fragment, or 0 if last
 
@@ -460,8 +462,7 @@ static void _dbx_scan(dbx_t *dbx)
                and are a multiple of 4 and that fragment does not point to itself
     */
     if (header[header_start] != i ||
-        (!((header[(header_start + 1) & 7] == 0x200 ||
-            header[(header_start + 1) & 7] == 0x210) &&
+        (!(header[(header_start + 1) & 7] == 0x200 &&
            header[(header_start + 2) & 7] > 0 &&
            header[(header_start + 2) & 7] <= 0x200 &&
            header[(header_start + 3) & 7] < dbx->file_size &&
@@ -733,7 +734,7 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
   if (dbx == NULL || msg_number >= dbx->message_count)
     return NULL;
 
-  i = _dbx_read_msg_offset(dbx, msg_number);
+  i = dbx->info[msg_number].offset;
   total_size = 0;
 
   while (i != 0) {
@@ -792,6 +793,12 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     */
     if (chain_index)
       memset(message + size, '-', 4);
+    if (dbx->options->debug) 
+      printf("%08X: %08X %08X %04X\n",
+             size,
+             pfragment->offset,
+             pfragment->offset_next,
+             fsize);
     size += fsize;
   }
 

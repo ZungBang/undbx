@@ -259,38 +259,47 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
       
     dbx_save_status_t status = DBX_SAVE_NOOP;
     int cond;
+    int ignore;
+
+    ignore = (dbx->options->ignore0 &&
+              !no_more_messages &&
+              dbx->info[imessage].offset == 0);
     
     if (!no_more_messages && !no_more_files) {
       cond = strcmp(dbx->info[imessage].filename, eml_files[ifile]);
+      if (ignore && cond == 0) {
+        cond = 1;
+        imessage++;
+      }
     }
     else if (no_more_files)
       cond = -1;
     else
       cond = 1;
-      
+
     if (cond < 0) {
       /* message not found on disk: extract from dbx */
-      status = _maybe_save_message(dbx, imessage, eml_dir, 1); 
+      if (!ignore)
+        status = _maybe_save_message(dbx, imessage, eml_dir, 1); 
       imessage++;
-      no_more_messages = (imessage == dbx->message_count);
     }
     else if (cond == 0) {
       /* message found on disk: extract from dbx if modified */
       status = _maybe_save_message(dbx, imessage, eml_dir, 0);
       imessage++;
-      no_more_messages = (imessage == dbx->message_count);      
       ifile++;
-      no_more_files = (ifile == num_eml_files);
     }
     else {
       /* file on disk not found in dbx: delete from disk */
       sys_delete(eml_dir, eml_files[ifile]);
       printf("       DELETE: %s\n", eml_files[ifile]);
       ifile++;
-      no_more_files = (ifile == num_eml_files);
       (*deleted)++;
     }
 
+    no_more_messages = (imessage == dbx->message_count);
+    no_more_files = (ifile == num_eml_files);
+    
     if (status == DBX_SAVE_OK)
       (*saved)++;
     if (status == DBX_SAVE_ERROR)
@@ -415,6 +424,7 @@ static void _usage(char *prog, int rc)
           "\t-v, --version  \t show only version string\n"
           "\t-r, --recover  \t enable recovery mode\n"
           "\t-s, --safe-mode\t generate locale-safe file names\n"
+          "\t-i, --ignore0  \t ignore empty messages\n"
           "\t-d, --debug    \t output debug messages\n",
           prog);
   
@@ -452,7 +462,8 @@ int main(int argc, char *argv[])
   char *dbx_dir = NULL;
   char *out_dir = NULL;
   int num_dbx_files = 0;
-  dbx_options_t options = { 0, 0 };
+  dbx_options_t options = { 0 };
+  int c = -1;
 
   printf("UnDBX v" DBX_VERSION " (" __DATE__ ")\n");
   fflush(stdout);
@@ -466,18 +477,18 @@ int main(int argc, char *argv[])
   }
 
   while (1) {
-    int c;
     static struct option long_options[] = {
       {"help", no_argument, NULL, 'h'},
       {"version", no_argument, NULL, 'v'},
       {"recover", no_argument, NULL, 'r'},
       {"safe-mode", no_argument, NULL, 's'},
+      {"ignore0", no_argument, NULL, 'i'},
       {"debug", no_argument, NULL, 'd'},
       {0, 0, 0, 0}
     };
     
-    c = getopt_long(argc, argv, "hvrsd", long_options, NULL);
-    if (c == -1)
+    c = getopt_long(argc, argv, "hvrsid", long_options, NULL);
+    if (c == -1 || c == '?')
       break;
     
     switch (c) {
@@ -493,6 +504,9 @@ int main(int argc, char *argv[])
     case 's':
       options.safe_mode = 1;
       break;
+    case 'i':
+      options.ignore0 = 1;
+      break;
     case 'd':
       options.debug = 1;
       break;
@@ -501,7 +515,7 @@ int main(int argc, char *argv[])
     }
   }
   
-  if (argc - optind < 1 || argc - optind > 2) 
+  if (c == '?' || argc - optind < 1 || argc - optind > 2) 
     _usage(argv[0], EXIT_FAILURE);
 
   dbx_dir = strdup(argv[optind]);
