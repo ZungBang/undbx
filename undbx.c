@@ -463,6 +463,7 @@ int main(int argc, char *argv[])
   char *out_dir = NULL;
   int num_dbx_files = 0;
   dbx_options_t options = { 0 };
+  int c = -1;
 
   printf("UnDBX v" DBX_VERSION " (" __DATE__ ")\n");
   fflush(stdout);
@@ -476,7 +477,6 @@ int main(int argc, char *argv[])
   }
 
   while (1) {
-    int c;
     static struct option long_options[] = {
       {"help", no_argument, NULL, 'h'},
       {"version", no_argument, NULL, 'v'},
@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
     };
     
     c = getopt_long(argc, argv, "hvrsid", long_options, NULL);
-    if (c == -1)
+    if (c == -1 || c == '?')
       break;
     
     switch (c) {
@@ -515,7 +515,7 @@ int main(int argc, char *argv[])
     }
   }
   
-  if (argc - optind < 1 || argc - optind > 2) 
+  if (c == '?' || argc - optind < 1 || argc - optind > 2) 
     _usage(argv[0], EXIT_FAILURE);
 
   dbx_dir = strdup(argv[optind]);
