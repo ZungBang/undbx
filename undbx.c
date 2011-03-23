@@ -243,7 +243,7 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
   int num_eml_files = 0;
   int imessage = 0;
   int ifile = 0;
-
+  
   printf("------ Extracting %d messages from %s to %s/%s ... \n",
          dbx->message_count, dbx->filename, out_dir, eml_dir);
   fflush(stdout);
@@ -255,6 +255,14 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
   
   qsort(eml_files, num_eml_files, sizeof(char *), (dbx_cmpfunc_t) _str_cmp);
       
+  if (dbx->options->keep_deleted) {
+    int rc = sys_mkdir(eml_dir, "deleted");
+    if (rc != 0) {
+      perror("_extract (sys_mkdir)");
+      return;
+    }
+  }
+
   while (!no_more_messages || !no_more_files) {
       
     dbx_save_status_t status = DBX_SAVE_NOOP;
@@ -291,8 +299,18 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
     }
     else {
       /* file on disk not found in dbx: delete from disk */
-      sys_delete(eml_dir, eml_files[ifile]);
-      printf("       DELETE: %s\n", eml_files[ifile]);
+      if (dbx->options->keep_deleted) {
+        int rc = sys_move(eml_dir, eml_files[ifile], "deleted");
+        if (rc != 0) 
+          perror("_extract (sys_move)");
+        printf("        MOVED: %s\n", eml_files[ifile]);
+      }
+      else {
+        int rc = sys_delete(eml_dir, eml_files[ifile]);
+        if (rc != 0) 
+          perror("_extract (sys_delete)");
+        printf("       DELETE: %s\n", eml_files[ifile]);
+      }
       ifile++;
       (*deleted)++;
     }
@@ -306,8 +324,12 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
       (*errors)++;
   }
 
-  printf("------ %d messages saved, %d skipped, %d errors, %d files deleted\n",
-         *saved, dbx->message_count - *saved - *errors, *errors, *deleted);
+  printf("------ %d messages saved, %d skipped, %d errors, %d files %s\n",
+         *saved,
+         dbx->message_count - *saved - *errors,
+         *errors,
+         *deleted,
+         dbx->options->keep_deleted? "moved":"deleted");
   fflush(stdout);
   
   sys_glob_free(eml_files);
@@ -420,12 +442,14 @@ static void _usage(char *prog, int rc)
           "Usage: %s [<OPTION>] <DBX-FOLDER | DBX-FILE> [<OUTPUT-FOLDER>]\n"
           "\n"
           "Options:\n"
-          "\t-h, --help     \t show this message\n"
-          "\t-v, --version  \t show only version string\n"
-          "\t-r, --recover  \t enable recovery mode\n"
-          "\t-s, --safe-mode\t generate locale-safe file names\n"
-          "\t-i, --ignore0  \t ignore empty messages\n"
-          "\t-d, --debug    \t output debug messages\n",
+          "\t-h, --help        \t show this message\n"
+          "\t-v, --version     \t show only version string\n"
+          "\t-r, --recover     \t enable recovery mode\n"
+          "\t-s, --safe-mode   \t generate locale-safe file names\n"
+          "\t-k, --keep-deleted\t do not delete extracted messages\n"
+          "\t                  \t that were deleted from the dbx file\n" 
+          "\t-i, --ignore0     \t ignore empty messages\n"
+          "\t-d, --debug       \t output debug messages\n",
           prog);
   
   exit(rc);
@@ -482,12 +506,13 @@ int main(int argc, char *argv[])
       {"version", no_argument, NULL, 'v'},
       {"recover", no_argument, NULL, 'r'},
       {"safe-mode", no_argument, NULL, 's'},
+      {"keep-deleted", no_argument, NULL, 'k'},
       {"ignore0", no_argument, NULL, 'i'},
       {"debug", no_argument, NULL, 'd'},
       {0, 0, 0, 0}
     };
     
-    c = getopt_long(argc, argv, "hvrsid", long_options, NULL);
+    c = getopt_long(argc, argv, "hvrskid", long_options, NULL);
     if (c == -1 || c == '?')
       break;
     
@@ -503,6 +528,9 @@ int main(int argc, char *argv[])
       break;
     case 's':
       options.safe_mode = 1;
+      break;
+    case 'k':
+      options.keep_deleted = 1;
       break;
     case 'i':
       options.ignore0 = 1;
