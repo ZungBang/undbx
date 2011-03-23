@@ -243,8 +243,6 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
   int num_eml_files = 0;
   int imessage = 0;
   int ifile = 0;
-  char *deleted_dir = strdup(eml_dir);
-  int rc = 0;
   
   printf("------ Extracting %d messages from %s to %s/%s ... \n",
          dbx->message_count, dbx->filename, out_dir, eml_dir);
@@ -258,9 +256,7 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
   qsort(eml_files, num_eml_files, sizeof(char *), (dbx_cmpfunc_t) _str_cmp);
       
   if (dbx->options->keep_deleted) {
-    deleted_dir = (char *)realloc(deleted_dir, sizeof(char) * (strlen(deleted_dir) + strlen("/deleted") + 1));
-    strcat(deleted_dir, "/deleted");
-    rc = sys_mkdir(eml_dir, "deleted");
+    int rc = sys_mkdir(eml_dir, "deleted");
     if (rc != 0) {
       perror("_extract (sys_mkdir)");
       return;
