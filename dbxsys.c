@@ -295,6 +295,36 @@ int sys_delete(char *parent, char *filename)
   return rc;
 }
 
+int sys_move(char *parent, char *filename, char *destination)
+{
+  int rc = 0;
+  char *cwd = NULL;
+  char *new_filename = NULL;
+
+  cwd = sys_getcwd();
+  if (cwd == NULL)
+    return -1;
+  
+  rc = sys_chdir(parent);
+  if (rc != 0) {
+    free(cwd);
+    return -1;
+  }
+
+  new_filename = (char *)malloc(sizeof(char) *
+                                (strlen(destination) + strlen("/") + strlen(filename) + 1));
+  if (new_filename) {
+    sprintf(new_filename, "%s/%s", destination, filename);
+    rc = rename(filename, new_filename);
+    free(new_filename);
+  }
+  
+  sys_chdir(cwd);
+  free(cwd);
+
+  return rc;
+}
+
 int sys_set_time(char *filename, time_t timestamp)
 {
   return _sys_set_time(filename, timestamp);

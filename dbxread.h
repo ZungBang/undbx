@@ -110,6 +110,7 @@ extern "C" {
   typedef struct {
     int recover;
     int safe_mode;
+    int keep_deleted;
     int ignore0;
     int debug;
   } dbx_options_t;

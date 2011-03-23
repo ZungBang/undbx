@@ -45,6 +45,7 @@ extern "C" {
   char *sys_getcwd(void);
   unsigned long long sys_filesize(char *parent, char *filename);
   int sys_delete(char *parent, char *filename);
+  int sys_move(char *parent, char *filename, char *destination);
   int sys_set_time(char *filename, time_t timestamp);
   int sys_set_filetime(char *filename, filetime_t filetime);
   char *sys_basename(char *path);
