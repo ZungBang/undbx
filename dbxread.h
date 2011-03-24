@@ -81,6 +81,7 @@ extern "C" {
   typedef struct dbx_info_s {
     int index;
     int offset;
+    int extract;
     char *filename;
     dbx_mask_t valid;
     unsigned int message_index;

@@ -39,10 +39,16 @@
 #include "dbxread.h"
 
 typedef enum { DBX_SAVE_NOOP, DBX_SAVE_OK, DBX_SAVE_ERROR } dbx_save_status_t;
+typedef enum { DBX_EXTRACT_IGNORE, DBX_EXTRACT_FORCE, DBX_EXTRACT_MAYBE } dbx_extract_decision_t;
 
 static int _str_cmp(const char **ia, const char **ib)
 {
   return strcmp(*ia, *ib);
+}
+
+static int _dbx_offset_cmp(const dbx_info_t *ia, const dbx_info_t *ib)
+{
+  return (ia->offset - ib->offset);
 }
 
 static dbx_save_status_t _save_message(char *dir, char *filename, char *message, unsigned int size)
@@ -265,7 +271,6 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
 
   while (!no_more_messages || !no_more_files) {
       
-    dbx_save_status_t status = DBX_SAVE_NOOP;
     int cond;
     int ignore;
 
@@ -285,15 +290,17 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
     else
       cond = 1;
 
+    dbx->info[imessage].extract = DBX_EXTRACT_IGNORE;
+    
     if (cond < 0) {
       /* message not found on disk: extract from dbx */
       if (!ignore)
-        status = _maybe_save_message(dbx, imessage, eml_dir, 1); 
+        dbx->info[imessage].extract = DBX_EXTRACT_FORCE; 
       imessage++;
     }
     else if (cond == 0) {
       /* message found on disk: extract from dbx if modified */
-      status = _maybe_save_message(dbx, imessage, eml_dir, 0);
+      dbx->info[imessage].extract = DBX_EXTRACT_MAYBE; 
       imessage++;
       ifile++;
     }
@@ -317,7 +324,25 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
 
     no_more_messages = (imessage == dbx->message_count);
     no_more_files = (ifile == num_eml_files);
-    
+  }
+
+  /* sort entries by offset: should make extraction faster in most cases */
+  qsort(dbx->info, dbx->message_count, sizeof(dbx_info_t), (dbx_cmpfunc_t) _dbx_offset_cmp);
+  
+  for(imessage = 0; imessage < dbx->message_count; imessage++) {
+    dbx_save_status_t status = DBX_SAVE_NOOP;
+
+    switch (dbx->info[imessage].extract) {
+    case DBX_EXTRACT_IGNORE:
+      break;
+    case DBX_EXTRACT_FORCE:
+      status = _maybe_save_message(dbx, imessage, eml_dir, 1);
+      break;
+    case DBX_EXTRACT_MAYBE:
+      status = _maybe_save_message(dbx, imessage, eml_dir, 0);
+      break;
+    }
+        
     if (status == DBX_SAVE_OK)
       (*saved)++;
     if (status == DBX_SAVE_ERROR)
