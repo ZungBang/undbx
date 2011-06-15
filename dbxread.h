@@ -34,6 +34,7 @@ extern "C" {
 #endif
 
 #include "dbxsys.h"
+#include "dbxprogress.h"
   
 #define DBX_MAX_FILENAME 128 
 
@@ -113,6 +114,7 @@ extern "C" {
     int safe_mode;
     int keep_deleted;
     int ignore0;
+    dbx_verbosity_t verbosity;
     int debug;
   } dbx_options_t;
   
@@ -120,6 +122,7 @@ extern "C" {
     char *filename;
     FILE *file;
     dbx_options_t *options;
+    dbx_progress_handle_t progress_handle;
     unsigned long long file_size;
     dbx_type_t type;
     int message_count;

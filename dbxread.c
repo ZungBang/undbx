@@ -334,10 +334,11 @@ static int _dbx_read_index(dbx_t *dbx, int pos)
   int index_count;
 
   if (pos <= 0 || dbx->file_size <= (unsigned long long)pos) {
-    fprintf(stderr,
-            "warning: DBX file %s is corrupted (bad seek offset %08X)\n"
-            "         consider running in recovery mode with --recover command line option\n",
-            dbx->filename, pos);
+    dbx_progress_message(dbx->progress_handle,
+                         DBX_STATUS_WARNING,
+                         "DBX file %s is corrupted (bad seek offset %08X)",
+                         dbx->filename,
+                         pos);
     return 0;
   }
 
@@ -346,10 +347,12 @@ static int _dbx_read_index(dbx_t *dbx, int pos)
   fseek(dbx->file, 5, SEEK_CUR);
   sys_fread(&ptr_count, 1, 1, dbx->file);
   if (ptr_count <= 0) {
-    fprintf(stderr,
-            "warning: DBX file %s is corrupted (bad count %d at offset %08X)\n"
-            "         consider running in recovery mode with --recover command line option\n",
-            dbx->filename, ptr_count, pos + 8 + 4 + 5);
+    dbx_progress_message(dbx->progress_handle,
+                         DBX_STATUS_WARNING,
+                         "DBX file %s is corrupted (bad count %d at offset %08X)",
+                         dbx->filename,
+                         ptr_count,
+                         pos + 8 + 4 + 5);
     return 0;
   }
   fseek(dbx->file, 2, SEEK_CUR);
@@ -409,12 +412,9 @@ static void _dbx_scan(dbx_t *dbx)
   int header_start = 0;
   int ready = 0;
   unsigned int i = 0;
-  unsigned int pi = 0;
   int j = 0;
 
-  const unsigned int di = (unsigned int) (((unsigned int) dbx->file_size) / 1000.0);
-  printf("------ Scanning %s:   0.0%%", dbx->filename);
-  fflush(stdout);
+  dbx_progress_push(dbx->progress_handle, DBX_VERBOSITY_INFO, dbx->file_size, "Scanning %s", dbx->filename);
 
   /* the following can only work if file size is less than 4G
      (which is way over the 2GB dbx size limit)
@@ -426,11 +426,7 @@ static void _dbx_scan(dbx_t *dbx)
     dbx_fragment_t *other = NULL;
     dbx_fragment_t *fragment = NULL;
 
-    if (i - pi >= di) {
-      printf("\b\b\b\b\b\b%5.1f%%", 100 * ((double)i)/(unsigned int)dbx->file_size);
-      fflush(stdout);
-      pi = i;
-    }
+    dbx_progress_update(dbx->progress_handle, DBX_STATUS_OK, i, NULL);
 
     /* initialize header buffer */
     if (!ready) {
@@ -459,7 +455,7 @@ static void _dbx_scan(dbx_t *dbx)
        5th word value is offset of previous fragment (clobbering message data!)
 
        sanity: we check that all offsets are less than file size,
-               and are a multiple of 4 and that fragment does not point to itself
+       and are a multiple of 4 and that fragment does not point to itself
     */
     if (header[header_start] != i ||
         (!(header[(header_start + 1) & 7] == 0x200 &&
@@ -534,9 +530,8 @@ static void _dbx_scan(dbx_t *dbx)
     ready = 0;
   }
 
-  printf("\b\b\b\b\b\b100.0%%\n");
-
-  printf ("------ Chaining fragments into messages ... ");
+  dbx_progress_pop(dbx->progress_handle, NULL);
+  dbx_progress_push(dbx->progress_handle, DBX_VERBOSITY_INFO, -1, "Chaining fragments into messages");
 
   for (j = 0; j < DBX_SCAN_NUM; j++) {
     if (dbx->scan[j].count) {
@@ -577,7 +572,8 @@ static void _dbx_scan(dbx_t *dbx)
       }
     }
   }
-  printf ("done\n");
+
+  dbx_progress_pop(dbx->progress_handle, "done");
 
   /* collect the fragments that start messages chains
      messages start with fragments where prev == -1,
@@ -650,6 +646,7 @@ dbx_t *dbx_open(char *filename, dbx_options_t *options)
   dbx_t *dbx = (dbx_t *) calloc(1, sizeof(dbx_t));
 
   if (dbx) {
+    dbx->progress_handle = dbx_progress_new(options->verbosity);
     dbx->file = fopen(filename, "rb");
     if (dbx->file == NULL) {
       free(dbx);
@@ -717,6 +714,7 @@ void dbx_close(dbx_t *dbx)
       }
     }
 
+    dbx_progress_delete(dbx->progress_handle);
     free(dbx);
   }
 }
@@ -742,10 +740,12 @@ char *dbx_message(dbx_t *dbx, int msg_number, unsigned int *psize)
     block_size=0;
     sys_fread_short(&block_size, dbx->file);
     if (block_size <= 0 || block_size > 0x200) {
-      fprintf(stderr,
-              "warning: DBX file %s is corrupted (bad block size %04X at offset %08X)\n"
-              "         consider running in recovery mode with --recover command line option\n",
-              dbx->filename, block_size, i + 8);
+      dbx_progress_message(dbx->progress_handle,
+                           DBX_STATUS_WARNING,
+                           "DBX file %s is corrupted (bad block size %04X at offset %08X)",
+                           dbx->filename,
+                           block_size,
+                           i + 8);
       break;
     }
     fseek(dbx->file, 2, SEEK_CUR);

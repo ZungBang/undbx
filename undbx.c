@@ -160,13 +160,11 @@ static dbx_save_status_t _maybe_save_message(dbx_t *dbx, int imessage, char *dir
       status = _save_message(dir, info->filename, message, message_size);
       switch (status) {
       case DBX_SAVE_ERROR:
-        printf("%5.1f%%  ERROR: %s\n", 100 * (imessage + 1.0)/dbx->message_count, info->filename);
-        fflush(stdout);
+        dbx_progress_update(dbx->progress_handle, DBX_STATUS_ERROR, imessage, "%s", info->filename);
         break;
       case DBX_SAVE_OK:
         _set_message_filetime(info, dir);
-        printf("%5.1f%%     OK: %s\n", 100 * (imessage + 1.0)/dbx->message_count, info->filename);
-        fflush(stdout);
+        dbx_progress_update(dbx->progress_handle, DBX_STATUS_OK, imessage, "%s", info->filename);
         break;
       default:
         break;
@@ -200,8 +198,12 @@ static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
         dest_dir = (char *)realloc(dest_dir, sizeof(char) * (strlen(dest_dir) + strlen("/deleted") + 1));
         strcat(dest_dir, "/deleted");
       }
-      printf("------ Recovering %d %s from %s to %s/%s ... \n",
-             dbx->scan[i].count, scan_type[i], dbx->filename, out_dir, dest_dir);
+
+      dbx_progress_push(dbx->progress_handle,
+                        DBX_VERBOSITY_INFO,
+                        dbx->scan[i].count,
+                        "Recovering %d %s from %s to %s/%s",
+                        dbx->scan[i].count, scan_type[i], dbx->filename, out_dir, dest_dir);
       if (i) {
         int rc = sys_mkdir(eml_dir, "deleted");
         if (rc != 0) {
@@ -216,14 +218,12 @@ static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
           switch (status) {
           case DBX_SAVE_ERROR:
             e++;
-            printf("%5.1f%%  ERROR: %s\n", 100 * (imessage + 1.0)/dbx->scan[i].count, filename);
-            fflush(stdout);
+            dbx_progress_update(dbx->progress_handle, DBX_STATUS_ERROR, imessage, "%s", filename);
             break;
           case DBX_SAVE_OK:
             s++;
             _set_message_time(dest_dir, filename, timestamp);
-            printf("%5.1f%%     OK: %s\n", 100 * (imessage + 1.0)/dbx->scan[i].count, filename);
-            fflush(stdout);
+            dbx_progress_update(dbx->progress_handle, DBX_STATUS_OK, imessage, "%s", filename);
             break;
           default:
             break;
@@ -233,8 +233,7 @@ static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
         free(message);
       }
       free(dest_dir);
-      printf("------ %d %s recovered, %d errors\n", s, scan_type[i], e);
-      fflush(stdout);
+      dbx_progress_pop(dbx->progress_handle, "%d %s recovered, %d errors", s, scan_type[i], e);
     }
     *saved += s;
     *errors += e;
@@ -250,9 +249,14 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
   int imessage = 0;
   int ifile = 0;
   
-  printf("------ Extracting %d messages from %s to %s/%s ... \n",
-         dbx->message_count, dbx->filename, out_dir, eml_dir);
-  fflush(stdout);
+  dbx_progress_push(dbx->progress_handle,
+                    DBX_VERBOSITY_INFO,
+                    dbx->message_count,
+                    "Extracting %d messages from %s to %s/%s",
+                    dbx->message_count,
+                    dbx->filename,
+                    out_dir,
+                    eml_dir);
 
   eml_files = sys_glob(eml_dir, "*.eml", &num_eml_files);
 
@@ -310,13 +314,13 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
         int rc = sys_move(eml_dir, eml_files[ifile], "deleted");
         if (rc != 0) 
           perror("_extract (sys_move)");
-        printf("        MOVED: %s\n", eml_files[ifile]);
+        dbx_progress_update(dbx->progress_handle, DBX_STATUS_MOVED, -1, "%s", eml_files[ifile]);
       }
       else {
         int rc = sys_delete(eml_dir, eml_files[ifile]);
         if (rc != 0) 
           perror("_extract (sys_delete)");
-        printf("       DELETE: %s\n", eml_files[ifile]);
+        dbx_progress_update(dbx->progress_handle, DBX_STATUS_DELETED, -1, "%s", eml_files[ifile]);        
       }
       ifile++;
       (*deleted)++;
@@ -349,13 +353,13 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
       (*errors)++;
   }
 
-  printf("------ %d messages saved, %d skipped, %d errors, %d files %s\n",
-         *saved,
-         dbx->message_count - *saved - *errors,
-         *errors,
-         *deleted,
-         dbx->options->keep_deleted? "moved":"deleted");
-  fflush(stdout);
+  dbx_progress_pop(dbx->progress_handle,
+                   "%d messages saved, %d skipped, %d errors, %d files %s",
+                   *saved,
+                   dbx->message_count - *saved - *errors,
+                   *errors,
+                   *deleted,
+                   dbx->options->keep_deleted? "moved":"deleted");
   
   sys_glob_free(eml_files);
 }
@@ -373,13 +377,13 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, dbx_options_t *o
 
   cwd = sys_getcwd();
   if (cwd == NULL) {
-    fprintf(stderr, "error: can't get current working directory\n");
+    dbx_progress_message(NULL, DBX_STATUS_ERROR, "can't get current working directory");
     goto UNDBX_DONE;
   }
 
   rc = sys_chdir(dbx_dir);
   if (rc != 0) {
-    fprintf(stderr, "error: can't chdir to %s\n", dbx_dir);
+    dbx_progress_message(NULL, DBX_STATUS_ERROR, "can't chdir to %s", dbx_dir);
     goto UNDBX_DONE;
   }
   
@@ -388,35 +392,32 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, dbx_options_t *o
   sys_chdir(cwd);
 
   if (dbx == NULL) {
-    fprintf(stderr, "warning: can't open DBX file %s\n", dbx_file);
+    dbx_progress_message(dbx->progress_handle, DBX_STATUS_WARNING, "can't open DBX file %s", dbx_file);
     rc = -1;
     goto UNDBX_DONE;
   }
 
   if (!options->recover && dbx->type != DBX_TYPE_EMAIL) {
-    fprintf(stderr, "warning: DBX file %s does not contain messages\n", dbx_file);
+    dbx_progress_message(dbx->progress_handle, DBX_STATUS_WARNING, "DBX file %s does not contain messages", dbx_file);
     rc = -1;
     goto UNDBX_DONE;
   }
 
   if (!options->recover && dbx->file_size >= 0x80000000) {
-    fprintf(stderr,
-            "warning: DBX file %s is corrupted (larger than 2GB)\n"
-            "         consider running in recovery mode with --recover command line option\n",
-            dbx_file);
+    dbx_progress_message(dbx->progress_handle, DBX_STATUS_WARNING,"DBX file %s is corrupted (larger than 2GB)", dbx_file);
   }
 
   eml_dir = strdup(dbx_file);
   eml_dir[strlen(eml_dir) - 4] = '\0';
   rc = sys_mkdir(out_dir, eml_dir);
   if (rc != 0) {
-    fprintf(stderr, "error: can't create directory %s/%s\n", out_dir, eml_dir);
+    dbx_progress_message(dbx->progress_handle, DBX_STATUS_ERROR, "can't create directory %s/%s", out_dir, eml_dir);
     goto UNDBX_DONE;
   }
 
   rc = sys_chdir(out_dir);
   if (rc != 0) {
-    fprintf(stderr, "error: can't chdir to %s\n", out_dir);
+    dbx_progress_message(dbx->progress_handle, DBX_STATUS_ERROR, "can't chdir to %s", out_dir);
     goto UNDBX_DONE;
   }
 
@@ -460,15 +461,13 @@ static void _usage(char *prog, int rc)
 {
   FILE *stream = (rc == EXIT_SUCCESS)? stdout:stderr;
   
-  if (rc != EXIT_SUCCESS)
-    fprintf(stream, "error: bad command line\n");
-  
   fprintf(stream,
           "Usage: %s [<OPTION>] <DBX-FOLDER | DBX-FILE> [<OUTPUT-FOLDER>]\n"
           "\n"
           "Options:\n"
           "\t-h, --help        \t show this message\n"
-          "\t-v, --version     \t show only version string\n"
+          "\t-V, --version     \t show only version string\n"
+          "\t-v, --verbosity N \t set verbosity level to N [default: 3]\n"
           "\t-r, --recover     \t enable recovery mode\n"
           "\t-s, --safe-mode   \t generate locale-safe file names\n"
           "\t-k, --keep-deleted\t do not delete extracted messages\n"
@@ -525,10 +524,13 @@ int main(int argc, char *argv[])
 #endif
   }
 
+  options.verbosity = DBX_VERBOSITY_INFO;
+  
   while (1) {
     static struct option long_options[] = {
       {"help", no_argument, NULL, 'h'},
-      {"version", no_argument, NULL, 'v'},
+      {"version", no_argument, NULL, 'V'},
+      {"verbosity", required_argument, NULL, 'v'},
       {"recover", no_argument, NULL, 'r'},
       {"safe-mode", no_argument, NULL, 's'},
       {"keep-deleted", no_argument, NULL, 'k'},
@@ -537,16 +539,19 @@ int main(int argc, char *argv[])
       {0, 0, 0, 0}
     };
     
-    c = getopt_long(argc, argv, "hvrskid", long_options, NULL);
-    if (c == -1 || c == '?')
+    c = getopt_long(argc, argv, "hVv:rskid", long_options, NULL);
+    if (c == -1 || c == '?' || c == ':')
       break;
     
     switch (c) {
     case 'h':
       _usage(argv[0], EXIT_SUCCESS);
       break;
-    case 'v':
+    case 'V':
       exit(EXIT_SUCCESS);
+      break;
+    case 'v':
+      options.verbosity = atoi(optarg);
       break;
     case 'r':
       options.recover = 1;
@@ -568,8 +573,13 @@ int main(int argc, char *argv[])
     }
   }
   
-  if (c == '?' || argc - optind < 1 || argc - optind > 2) 
+  if (c == '?') 
     _usage(argv[0], EXIT_FAILURE);
+
+  if (argc - optind < 1 || argc - optind > 2) {
+    fprintf(stderr, "error: bad command line\n");
+    _usage(argv[0], EXIT_FAILURE);
+  }
 
   dbx_dir = strdup(argv[optind]);
   
@@ -585,9 +595,9 @@ int main(int argc, char *argv[])
   }
 
   if (num_dbx_files > 0)
-    printf("Extracted %d out of %d DBX files.\n", n - fail, n);
+    dbx_progress_message(NULL, DBX_STATUS_OK, "Extracted %d out of %d DBX files", n - fail, n);
   else
-    fprintf(stderr, "warning: can't find DBX files in \"%s\"\n", dbx_dir);
+    dbx_progress_message(NULL, DBX_STATUS_WARNING, "can't find DBX files in \"%s\"", dbx_dir);
   
   sys_glob_free(dbx_files);
   free(dbx_dir);
