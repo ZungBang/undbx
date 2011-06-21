@@ -29,13 +29,18 @@
 
 # This is a convenience script that I use to package UnDBX for MS-Windows
 #
-# Usage: dist-win32.sh [host]
+# Usage: ./dist-win32.sh [host]
 #
-# The default host is i586-mingw32msvc which is the
+# The default host is i686-w64-mingw32 which is the
 # MinGW win32 cross-compiler on Debian/testing (my dev box)
+# 
+# For 64bit windows:
+#   export ac_cv_func_realloc_0_nonnull=yes
+#   export ac_cv_func_malloc_0_nonnull=yes
+#   ./dist-win32.sh x86_64-w64-mingw32
 #
 
-win32_host=${1:-i586-mingw32msvc}
+win32_host=${1:-i686-w64-mingw32}
 basedir=${0/%dist-win32.sh}
 cd "$basedir"
 autoreconf -vfi && find -maxdepth 1 -size 0 -exec rm -v {} \;
