@@ -392,7 +392,7 @@ static int _undbx(char *dbx_dir, char *out_dir, char *dbx_file, dbx_options_t *o
   sys_chdir(cwd);
 
   if (dbx == NULL) {
-    dbx_progress_message(dbx->progress_handle, DBX_STATUS_WARNING, "can't open DBX file %s", dbx_file);
+    dbx_progress_message(NULL, DBX_STATUS_WARNING, "can't open DBX file %s", dbx_file);
     rc = -1;
     goto UNDBX_DONE;
   }
