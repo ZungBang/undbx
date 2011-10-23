@@ -413,7 +413,8 @@ static void _dbx_scan(dbx_t *dbx)
   int ready = 0;
   unsigned int i = 0;
   int j = 0;
-
+  int offset = dbx->options->offset;
+  
   dbx_progress_push(dbx->progress_handle, DBX_VERBOSITY_INFO, dbx->file_size, "Scanning %s", dbx->filename);
 
   /* the following can only work if file size is less than 4G
@@ -457,18 +458,18 @@ static void _dbx_scan(dbx_t *dbx)
        sanity: we check that all offsets are less than file size,
        and are a multiple of 4 and that fragment does not point to itself
     */
-    if (header[header_start] != i ||
+    if (header[header_start] != i + offset ||
         (!(header[(header_start + 1) & 7] == 0x200 &&
            header[(header_start + 2) & 7] > 0 &&
            header[(header_start + 2) & 7] <= 0x200 &&
            header[(header_start + 3) & 7] < dbx->file_size &&
            (header[(header_start + 3) & 7] & 3) == 0 &&
-           header[(header_start + 3) & 7] != i) &&
+           header[(header_start + 3) & 7] != i + offset) &&
          !(header[(header_start + 1) & 7] == 0x1FC &&
            header[(header_start + 2) & 7] == 0x210 &&
            header[(header_start + 3) & 7] < dbx->file_size &&
            (header[(header_start + 3) & 7] & 3) == 0 &&
-           header[(header_start + 3) & 7] != i &&
+           header[(header_start + 3) & 7] != i + offset &&
            header[(header_start + 4) & 7] < dbx->file_size &&
            (header[(header_start + 4) & 7] & 3) == 0))) {
       header_start = (header_start + 1) & 7;
@@ -783,7 +784,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     pfragment = dbx->scan[chain_index].fragments + ifragment;
     /* deleted fragments have size 0x210, which is wrong - it's 0x200 */
     fsize = pfragment->size <= 0x200? pfragment->size : 0x200;
-    fseek(dbx->file, pfragment->offset + 16, SEEK_SET);
+    fseek(dbx->file, pfragment->offset + 16 - dbx->options->offset, SEEK_SET);
     message = (char *)realloc(message, size + fsize + 1);
     sys_fread(message + size, fsize, 1, dbx->file);
     /* each deleted fragment starts with bad 4 bytes

@@ -469,6 +469,7 @@ static void _usage(char *prog, int rc)
           "\t-V, --version     \t show only version string\n"
           "\t-v, --verbosity N \t set verbosity level to N [default: 3]\n"
           "\t-r, --recover     \t enable recovery mode\n"
+          "\t-o, --offset N    \t global file offset in bytes\n"
           "\t-s, --safe-mode   \t generate locale-safe file names\n"
           "\t-k, --keep-deleted\t do not delete extracted messages\n"
           "\t                  \t that were deleted from the dbx file\n" 
@@ -532,6 +533,7 @@ int main(int argc, char *argv[])
       {"version", no_argument, NULL, 'V'},
       {"verbosity", required_argument, NULL, 'v'},
       {"recover", no_argument, NULL, 'r'},
+      {"offset", required_argument, NULL, 'o'},
       {"safe-mode", no_argument, NULL, 's'},
       {"keep-deleted", no_argument, NULL, 'k'},
       {"ignore0", no_argument, NULL, 'i'},
@@ -555,6 +557,9 @@ int main(int argc, char *argv[])
       break;
     case 'r':
       options.recover = 1;
+      break;
+    case 'o':
+      options.offset = atoi(optarg);
       break;
     case 's':
       options.safe_mode = 1;

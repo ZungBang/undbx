@@ -115,6 +115,7 @@ extern "C" {
     int keep_deleted;
     int ignore0;
     dbx_verbosity_t verbosity;
+    int offset;
     int debug;
   } dbx_options_t;
   
