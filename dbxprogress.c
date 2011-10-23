@@ -96,12 +96,12 @@ static const char *_dbx_status_string(dbx_status_t status)
 
 static void _dbx_progress_update(dbx_status_t status,
                                  dbx_progress_bar_t *bar,
-                                 int n,
+                                 unsigned int n,
                                  char *format,
                                  va_list ap)
 {
   if (format == NULL || !bar->verbose) {
-    if (n >= 0) {
+    if (n + 1 != 0) {
       if ((n + 1) < bar->max && n - bar->last < bar->delta)
         return;
       bar->last = n;
@@ -110,7 +110,7 @@ static void _dbx_progress_update(dbx_status_t status,
     }
   }
   else {
-    if (n >= 0) 
+    if (n + 1 != 0) 
       _dbx_progress_printf(DBX_STATUS_OK, "\n%5.1f%% ", (n + 1) / bar->max * 100.0);
     else
       _dbx_progress_printf(DBX_STATUS_OK, "\n       ");
@@ -139,7 +139,7 @@ void dbx_progress_delete(dbx_progress_handle_t handle)
 
 void dbx_progress_push(dbx_progress_handle_t handle,
                        dbx_verbosity_t level,
-                       int n,
+                       unsigned int n,
                        char *format, ...)
 {
   dbx_progress_bar_t *bar = NULL;
@@ -209,7 +209,7 @@ void dbx_progress_pop(dbx_progress_handle_t handle, char *format, ...)
 
 void dbx_progress_update(dbx_progress_handle_t handle,
                          dbx_status_t status,
-                         int n,
+                         unsigned int n,
                          char *format, ...)
 {
   dbx_progress_bar_t *bar = NULL;

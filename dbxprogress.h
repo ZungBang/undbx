@@ -59,13 +59,13 @@ extern "C" {
   
   void dbx_progress_push(dbx_progress_handle_t handle,
                          dbx_verbosity_t level,
-                         int n,
+                         unsigned int n,
                          char *format, ...);
   void dbx_progress_pop(dbx_progress_handle_t handle, char *format, ...);
   
   void dbx_progress_update(dbx_progress_handle_t handle,
                            dbx_status_t status,
-                           int n,
+                           unsigned int n,
                            char *format, ...);
   void dbx_progress_message(dbx_progress_handle_t handle,
                             dbx_status_t status,
