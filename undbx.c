@@ -147,7 +147,7 @@ static dbx_save_status_t _maybe_save_message(dbx_t *dbx, int imessage, char *dir
 {
   dbx_save_status_t status = DBX_SAVE_NOOP;
   dbx_info_t *info = dbx->info + imessage;
-  unsigned long long size = 0;
+  unsigned long long int size = 0;
   unsigned int message_size = 0;
   char *message = NULL;
 

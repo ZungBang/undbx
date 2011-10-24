@@ -247,10 +247,10 @@ char *sys_getcwd(void)
   return _sys_getcwd();
 }
 
-unsigned long long sys_filesize(char *parent, char *filename)
+unsigned long long int sys_filesize(char *parent, char *filename)
 {
   int rc = 0;
-  unsigned long long size = 0;
+  unsigned long long int size = 0;
   char *cwd = NULL;
   struct stat buf;
 
@@ -332,7 +332,7 @@ int sys_set_time(char *filename, time_t timestamp)
 
 int sys_set_filetime(char *filename, filetime_t filetime)
 {
-  filetime_t t = (filetime - JAN1ST1970) / ((unsigned long long) (NSPERSEC / 100));
+  filetime_t t = (filetime - JAN1ST1970) / ((unsigned long long int) (NSPERSEC / 100));
   return sys_set_time(filename, (time_t)t);
 }
 
@@ -351,21 +351,21 @@ size_t sys_fread(void *ptr, size_t size, size_t nitems, FILE *stream)
   return fread(ptr, size, nitems, stream);
 }
 
-void sys_fread_long_long(long long *value, FILE *file)
+void sys_fread_long_long(long long int *value, FILE *file)
 {
 #ifndef WORDS_BIGENDIAN
-  sys_fread(value, 1, sizeof(long long), file);
+  sys_fread(value, 1, sizeof(long long int), file);
 #else
   /* the following code is endianness neutral */
-  long long llw = 0;
-  llw =  (long long) (fgetc(file) & 0xFF);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x08);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x10);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x18);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x20);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x28);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x30);
-  llw |= ((long long) (fgetc(file) & 0xFF) << 0x38);  
+  long long int llw = 0;
+  llw =  (long long int) (fgetc(file) & 0xFF);
+  llw |= ((long long int) (fgetc(file) & 0xFF) << 0x08);
+  llw |= ((long long int) (fgetc(file) & 0xFF) << 0x10);
+  llw |= ((long long int) (fgetc(file) & 0xFF) << 0x18);
+  llw |= ((long long int) (fgetc(file) & 0xFF) << 0x20);
+  llw |= ((long long int) (fgetc(file) & 0xFF) << 0x28);
+  llw |= ((long long int) (fgetc(file) & 0xFF) << 0x30);
+  llw |= ((long long int) (fgetc(file) & 0xFF) << 0x38);  
   *value = llw;
 #endif
 }

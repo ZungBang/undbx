@@ -36,14 +36,14 @@
 extern "C" {
 #endif
 
-  typedef unsigned long long filetime_t;
+  typedef unsigned long long int filetime_t;
   
   char **sys_glob(char *parent, char *pattern, int *num_files);
   void sys_glob_free(char **pglob);
   int sys_mkdir(char *parent, char *dir);
   int sys_chdir(char *dir);
   char *sys_getcwd(void);
-  unsigned long long sys_filesize(char *parent, char *filename);
+  unsigned long long int sys_filesize(char *parent, char *filename);
   int sys_delete(char *parent, char *filename);
   int sys_move(char *parent, char *filename, char *destination);
   int sys_set_time(char *filename, time_t timestamp);
@@ -51,7 +51,7 @@ extern "C" {
   char *sys_basename(char *path);
   char *sys_dirname(char *path);
   size_t sys_fread(void * ptr, size_t size, size_t nitems, FILE * stream);
-  void sys_fread_long_long(long long *value, FILE *file);
+  void sys_fread_long_long(long long int *value, FILE *file);
   void sys_fread_int(int *value, FILE *file);
   void sys_fread_short(short *value, FILE *file);
   

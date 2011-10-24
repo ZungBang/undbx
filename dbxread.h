@@ -66,7 +66,7 @@ extern "C" {
   } dbx_fragment_t;
   
   typedef struct dbx_chains_s {
-    long long offset;
+    long long int offset;
     int deleted;
     int fragment_count;
     dbx_fragment_t *fragments;
@@ -118,7 +118,7 @@ extern "C" {
     FILE *file;
     dbx_options_t *options;
     dbx_progress_handle_t progress_handle;
-    unsigned long long file_size;
+    unsigned long long int file_size;
     dbx_type_t type;
     int message_count;
     int capacity;

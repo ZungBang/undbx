@@ -75,7 +75,7 @@ static filetime_t _dbx_read_date(FILE *file, int offset)
 {
   filetime_t filetime = 0;
   fseek(file, offset, SEEK_SET);
-  sys_fread_long_long((long long *)&filetime, file);
+  sys_fread_long_long((long long int *)&filetime, file);
   return filetime;
 }
 
@@ -333,7 +333,7 @@ static int _dbx_read_index(dbx_t *dbx, int pos)
   char ptr_count = 0;
   int index_count;
 
-  if (pos <= 0 || dbx->file_size <= (unsigned long long)pos) {
+  if (pos <= 0 || dbx->file_size <= (unsigned long long int)pos) {
     dbx_progress_message(dbx->progress_handle,
                          DBX_STATUS_WARNING,
                          "DBX file %s is corrupted (bad seek offset %08X)",
@@ -406,7 +406,7 @@ static int _dbx_read_indexes(dbx_t *dbx)
     return 0;
 }
 
-static dbx_chains_t *_dbx_get_scan_chains(dbx_t *dbx, long long offset, int deleted)
+static dbx_chains_t *_dbx_get_scan_chains(dbx_t *dbx, long long int offset, int deleted)
 {
   int i = 0;
   dbx_chains_t *scan = NULL;
@@ -801,7 +801,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
 {
   unsigned int size = 0;
   char filename[DBX_MAX_FILENAME];
-  char suffix[sizeof(".00000000.eml")];
+  char suffix[sizeof(".0000000000000000.eml")];
   char *message = NULL;
   dbx_fragment_t *pfragment = NULL;
   int ifragment = dbx->scan[chain_index].chains[msg_number] - dbx->scan[chain_index].fragments;
@@ -850,8 +850,10 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     eml_parse(message, &subject, &from, &to, &timestamp);
   }
 
+  unsigned long long int message_offset =
+    dbx->scan[chain_index].chains[msg_number]->offset - dbx->scan[chain_index].offset;
   if (dbx->options->safe_mode) {
-    sprintf(filename, "%08X.eml", dbx->scan[chain_index].chains[msg_number]->offset);
+    sprintf(filename, "%016LX.eml", message_offset);
   }
   else {
     snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%.31s_%.31s_%s",
@@ -859,7 +861,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
              to? (to[0]=='"'? to+1:to):"(no_receiver)",
              subject? subject:"(no_subject)");
     
-    sprintf(suffix, ".%08X.eml", dbx->scan[chain_index].chains[msg_number]->offset);
+    sprintf(suffix, ".%016LX.eml", message_offset);
     strcat(filename, suffix);
     
     _dbx_sanitize_filename(filename);
