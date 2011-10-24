@@ -56,13 +56,6 @@ extern "C" {
     DBX_MASK_MSGSIZE   = 0x20
   } dbx_mask_t;
 
-  typedef enum {
-    DBX_SCAN_MESSAGES,
-    DBX_SCAN_DELETED,
-    
-    DBX_SCAN_NUM
-  } dbx_scan_t;
-
   typedef struct dbx_fragment_s {
     unsigned int offset;
     unsigned int offset_next;
@@ -73,6 +66,8 @@ extern "C" {
   } dbx_fragment_t;
   
   typedef struct dbx_chains_s {
+    long long offset;
+    int deleted;
     int fragment_count;
     dbx_fragment_t *fragments;
     int count;
@@ -115,7 +110,6 @@ extern "C" {
     int keep_deleted;
     int ignore0;
     dbx_verbosity_t verbosity;
-    int offset;
     int debug;
   } dbx_options_t;
   
@@ -129,7 +123,8 @@ extern "C" {
     int message_count;
     int capacity;
     dbx_info_t *info;
-    dbx_chains_t scan[DBX_SCAN_NUM];
+    dbx_chains_t *scan;
+    int scan_count;
   } dbx_t;
 
   dbx_t *dbx_open(char *filename, dbx_options_t *options);

@@ -180,9 +180,9 @@ static dbx_save_status_t _maybe_save_message(dbx_t *dbx, int imessage, char *dir
 static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *errors)
 {
   int i = 0;
-  const char *scan_type[DBX_SCAN_NUM] = { "messages", "deleted message fragments" };
+  const char *scan_type[2] = { "messages", "deleted message fragments" };
   
-  for(i = 0; i < DBX_SCAN_NUM; i++) {
+  for(i = 0; i < dbx->scan_count; i++) {
     int s = 0;
     int e = 0;
     dbx_save_status_t status = DBX_SAVE_NOOP;
@@ -194,7 +194,7 @@ static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
     
     if (dbx->scan[i].count > 0) {
       char *dest_dir = strdup(eml_dir);
-      if (i) {
+      if (dbx->scan[i].deleted) {
         dest_dir = (char *)realloc(dest_dir, sizeof(char) * (strlen(dest_dir) + strlen("/deleted") + 1));
         strcat(dest_dir, "/deleted");
       }
@@ -202,9 +202,14 @@ static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
       dbx_progress_push(dbx->progress_handle,
                         DBX_VERBOSITY_INFO,
                         dbx->scan[i].count,
-                        "Recovering %d %s from %s to %s/%s",
-                        dbx->scan[i].count, scan_type[i], dbx->filename, out_dir, dest_dir);
-      if (i) {
+                        "Recovering %d %s with offset %Ld from %s to %s/%s",
+                        dbx->scan[i].count,
+                        scan_type[dbx->scan[i].deleted],
+                        dbx->scan[i].offset,
+                        dbx->filename,
+                        out_dir,
+                        dest_dir);
+      if (dbx->scan[i].deleted) {
         int rc = sys_mkdir(eml_dir, "deleted");
         if (rc != 0) {
           perror("_recover (sys_mkdir)");
@@ -233,7 +238,11 @@ static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
         free(message);
       }
       free(dest_dir);
-      dbx_progress_pop(dbx->progress_handle, "%d %s recovered, %d errors", s, scan_type[i], e);
+      dbx_progress_pop(dbx->progress_handle,
+                       "%d %s recovered, %d errors",
+                       s,
+                       scan_type[dbx->scan[i].deleted],
+                       e);
     }
     *saved += s;
     *errors += e;
@@ -469,7 +478,6 @@ static void _usage(char *prog, int rc)
           "\t-V, --version     \t show only version string\n"
           "\t-v, --verbosity N \t set verbosity level to N [default: 3]\n"
           "\t-r, --recover     \t enable recovery mode\n"
-          "\t-o, --offset N    \t global file offset in bytes\n"
           "\t-s, --safe-mode   \t generate locale-safe file names\n"
           "\t-k, --keep-deleted\t do not delete extracted messages\n"
           "\t                  \t that were deleted from the dbx file\n" 
@@ -533,7 +541,6 @@ int main(int argc, char *argv[])
       {"version", no_argument, NULL, 'V'},
       {"verbosity", required_argument, NULL, 'v'},
       {"recover", no_argument, NULL, 'r'},
-      {"offset", required_argument, NULL, 'o'},
       {"safe-mode", no_argument, NULL, 's'},
       {"keep-deleted", no_argument, NULL, 'k'},
       {"ignore0", no_argument, NULL, 'i'},
@@ -557,9 +564,6 @@ int main(int argc, char *argv[])
       break;
     case 'r':
       options.recover = 1;
-      break;
-    case 'o':
-      options.offset = atoi(optarg);
       break;
     case 's':
       options.safe_mode = 1;

@@ -406,6 +406,28 @@ static int _dbx_read_indexes(dbx_t *dbx)
     return 0;
 }
 
+static dbx_chains_t *_dbx_get_scan_chains(dbx_t *dbx, long long offset, int deleted)
+{
+  int i = 0;
+  dbx_chains_t *scan = NULL;
+  for (i = 0; i < dbx->scan_count; i++) {
+    if (dbx->scan[i].offset == offset &&
+        dbx->scan[i].deleted == deleted) {
+      return dbx->scan + i;
+    }
+  }
+  dbx->scan_count++;
+  dbx->scan = (dbx_chains_t *)realloc(dbx->scan, sizeof(dbx_chains_t) * dbx->scan_count);
+  scan = dbx->scan + dbx->scan_count - 1;
+  scan->offset = offset;
+  scan->deleted = deleted;
+  scan->fragment_count = 0;
+  scan->fragments = NULL;
+  scan->count = 0;
+  scan->chains = NULL;
+  return scan;
+}
+
 static void _dbx_scan(dbx_t *dbx)
 {
   int header[8] = {0};
@@ -413,7 +435,6 @@ static void _dbx_scan(dbx_t *dbx)
   int ready = 0;
   unsigned int i = 0;
   int j = 0;
-  int offset = dbx->options->offset;
   
   dbx_progress_push(dbx->progress_handle, DBX_VERBOSITY_INFO, dbx->file_size, "Scanning %s", dbx->filename);
 
@@ -458,20 +479,26 @@ static void _dbx_scan(dbx_t *dbx)
        sanity: we check that all offsets are less than file size,
        and are a multiple of 4 and that fragment does not point to itself
     */
-    if (header[header_start] != i + offset ||
-        (!(header[(header_start + 1) & 7] == 0x200 &&
-           header[(header_start + 2) & 7] > 0 &&
-           header[(header_start + 2) & 7] <= 0x200 &&
-           header[(header_start + 3) & 7] < dbx->file_size &&
-           (header[(header_start + 3) & 7] & 3) == 0 &&
-           header[(header_start + 3) & 7] != i + offset) &&
-         !(header[(header_start + 1) & 7] == 0x1FC &&
-           header[(header_start + 2) & 7] == 0x210 &&
-           header[(header_start + 3) & 7] < dbx->file_size &&
-           (header[(header_start + 3) & 7] & 3) == 0 &&
-           header[(header_start + 3) & 7] != i + offset &&
-           header[(header_start + 4) & 7] < dbx->file_size &&
-           (header[(header_start + 4) & 7] & 3) == 0))) {
+
+    int header_offset_diff = header[header_start] - i;
+    int message_fragment_found = (header[(header_start + 1) & 7] == 0x200 &&
+                                  header[(header_start + 2) & 7] > 0 &&
+                                  header[(header_start + 2) & 7] <= 0x200 &&
+                                  header[(header_start + 3) & 7] >= 0 &&
+                                  header[(header_start + 3) & 7] < dbx->file_size &&
+                                  (header[(header_start + 3) & 7] & 3) == 0 &&
+                                  header[(header_start + 3) & 7] != header[header_start])? 1:0;
+    int deleted_fragment_found = (header[(header_start + 1) & 7] == 0x1FC &&
+                                  header[(header_start + 2) & 7] == 0x210 &&
+                                  header[(header_start + 3) & 7] < dbx->file_size &&
+                                  (header[(header_start + 3) & 7] & 3) == 0 &&
+                                  header[(header_start + 3) & 7] != header[header_start] &&
+                                  header[(header_start + 4) & 7] >= 0 &&
+                                  header[(header_start + 4) & 7] < dbx->file_size &&
+                                  (header[(header_start + 4) & 7] & 3) == 0)? 1:0;
+    
+    if (!message_fragment_found &&
+        !deleted_fragment_found) {
       header_start = (header_start + 1) & 7;
       continue;
     }
@@ -486,7 +513,7 @@ static void _dbx_scan(dbx_t *dbx)
     
     /* add fragment to fragment list */
     deleted = (header[(header_start + 1) & 7] == 0x1FC)? 1:0;
-    chains = dbx->scan + deleted;
+    chains = _dbx_get_scan_chains(dbx, header_offset_diff, deleted);
 
     if ((chains->fragment_count % 4096) == 0)
       chains->fragments = (dbx_fragment_t *)realloc(chains->fragments,
@@ -534,7 +561,7 @@ static void _dbx_scan(dbx_t *dbx)
   dbx_progress_pop(dbx->progress_handle, NULL);
   dbx_progress_push(dbx->progress_handle, DBX_VERBOSITY_INFO, -1, "Chaining fragments into messages");
 
-  for (j = 0; j < DBX_SCAN_NUM; j++) {
+  for (j = 0; j < dbx->scan_count; j++) {
     if (dbx->scan[j].count) {
       dbx_chains_t *chains = NULL;
       dbx_fragment_t *other = NULL;
@@ -563,7 +590,7 @@ static void _dbx_scan(dbx_t *dbx)
           }
           if (other->prev >= 0)
             break;
-          if (j == 1 && other->offset_prev != fragment->offset)
+          if (dbx->scan[j].deleted && other->offset_prev != fragment->offset)
             break;
           fragment->next = k1;
           other->prev = i;
@@ -580,7 +607,7 @@ static void _dbx_scan(dbx_t *dbx)
      messages start with fragments where prev == -1,
      i.e. no other fragment points to it
   */
-  for (j = 0; j < DBX_SCAN_NUM; j++) {
+  for (j = 0; j < dbx->scan_count; j++) {
     if (dbx->scan[j].count) {
       int nm = 0;
       int nf = 0;
@@ -702,7 +729,7 @@ void dbx_close(dbx_t *dbx)
     dbx->info = NULL;
     free(dbx->filename);
 
-    for (i = 0; i < DBX_SCAN_NUM; i++) {
+    for (i = 0; i < dbx->scan_count; i++) {
       if (dbx->scan[i].chains) {
         free(dbx->scan[i].chains);
         dbx->scan[i].chains = NULL;
@@ -713,6 +740,11 @@ void dbx_close(dbx_t *dbx)
         dbx->scan[i].fragments = NULL;
         dbx->scan[i].fragment_count = 0;
       }
+    }
+    if (dbx->scan) {
+      free(dbx->scan);
+      dbx->scan = NULL;
+      dbx->scan_count = 0;
     }
 
     dbx_progress_delete(dbx->progress_handle);
@@ -784,7 +816,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     pfragment = dbx->scan[chain_index].fragments + ifragment;
     /* deleted fragments have size 0x210, which is wrong - it's 0x200 */
     fsize = pfragment->size <= 0x200? pfragment->size : 0x200;
-    fseek(dbx->file, pfragment->offset + 16 - dbx->options->offset, SEEK_SET);
+    fseek(dbx->file, pfragment->offset + 16 - dbx->scan[chain_index].offset, SEEK_SET);
     message = (char *)realloc(message, size + fsize + 1);
     sys_fread(message + size, fsize, 1, dbx->file);
     /* each deleted fragment starts with bad 4 bytes
@@ -792,7 +824,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
        so we replace them with 4 dashes, which eases
        eml parsing and should at least make the text readable
     */
-    if (chain_index)
+    if (dbx->scan[chain_index].deleted)
       memset(message + size, '-', 4);
     if (dbx->options->debug) 
       printf("%08X: %08X %08X %04X\n",
@@ -808,7 +840,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
     /* lose trailing nul characters in deleted messages,
        since size of last fragment is unknown
     */
-    if (chain_index) {
+    if (dbx->scan[chain_index].deleted) {
       int zeros = 0;
       while (zeros <= size && message[size - zeros] == 0)
         zeros++;
