@@ -303,7 +303,8 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
     else
       cond = 1;
 
-    dbx->info[imessage].extract = DBX_EXTRACT_IGNORE;
+    if (!no_more_messages)
+      dbx->info[imessage].extract = DBX_EXTRACT_IGNORE;
     
     if (cond < 0) {
       /* message not found on disk: extract from dbx */
