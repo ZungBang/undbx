@@ -41,7 +41,6 @@ typedef struct dbx_progress_bar_s {
   int verbose;
   float max;
   float last;
-  float last_percent;
   float delta;
 } dbx_progress_bar_t;
 
@@ -163,7 +162,6 @@ void dbx_progress_push(dbx_progress_handle_t handle,
   bar->verbose = (level <  handle->verbosity);
   bar->last = 0;
   bar->max = (float) n;
-  bar->last_percent = 0;
   bar->delta = bar->max / 1000.0;
 
   if (bar->enabled) {

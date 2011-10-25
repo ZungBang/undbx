@@ -617,6 +617,7 @@ static void _dbx_scan(dbx_t *dbx)
     }
   }
 
+  dbx_progress_update(dbx->progress_handle, DBX_STATUS_OK, dbx->file_size, NULL);
   dbx_progress_pop(dbx->progress_handle, NULL);
 }
 
