@@ -851,7 +851,14 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
   unsigned long long int message_offset =
     dbx->scan[chain_index].chains[msg_number]->offset - dbx->scan[chain_index].offset;
   if (dbx->options->safe_mode) {
-    sprintf(filename, "%016LX.eml", message_offset);
+    sprintf(filename,
+            "%016"
+#ifndef WIN32
+            "ll"
+#else
+            "I64"
+#endif
+            "X.eml", message_offset);
   }
   else {
     snprintf(filename, DBX_MAX_FILENAME - sizeof(suffix), "%.31s_%.31s_%s",
@@ -859,7 +866,14 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
              to? (to[0]=='"'? to+1:to):"(no_receiver)",
              subject? subject:"(no_subject)");
     
-    sprintf(suffix, ".%016LX.eml", message_offset);
+    sprintf(suffix,
+            ".%016"
+#ifndef WIN32
+            "ll"
+#else
+            "I64"
+#endif
+            "X.eml", message_offset);
     strcat(filename, suffix);
     
     _dbx_sanitize_filename(filename);

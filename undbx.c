@@ -202,7 +202,13 @@ static void _recover(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
       dbx_progress_push(dbx->progress_handle,
                         DBX_VERBOSITY_INFO,
                         dbx->scan[i].count,
-                        "Recovering %d %s with offset %Ld from %s to %s/%s",
+                        "Recovering %d %s with offset %"
+#ifndef WIN32
+                        "ll"
+#else
+                        "I64"
+#endif
+                        "d from %s to %s/%s",
                         dbx->scan[i].count,
                         scan_type[dbx->scan[i].deleted],
                         dbx->scan[i].offset,
