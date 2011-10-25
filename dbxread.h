@@ -72,6 +72,7 @@ extern "C" {
     dbx_fragment_t *fragments;
     int count;
     dbx_fragment_t **chains;
+    int *chain_fragment_count;
   } dbx_chains_t;
 
   typedef struct dbx_info_s {

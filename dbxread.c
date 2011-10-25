@@ -602,12 +602,20 @@ static void _dbx_scan(dbx_t *dbx)
     if (dbx->scan[j].count) {
       int nm = 0;
       int nf = 0;
+      int cnf = 0;
+      dbx_fragment_t *pf = NULL;
 
       dbx->scan[j].chains = (dbx_fragment_t **)calloc(dbx->scan[j].count, sizeof(dbx_fragment_t *));
+      dbx->scan[j].chain_fragment_count = (int *)calloc(dbx->scan[j].count, sizeof(int));
       for (nm = 0; nm < dbx->scan[j].count; nm++) {
         while (dbx->scan[j].fragments[nf].prev >= 0)
           nf++;
         dbx->scan[j].chains[nm] = dbx->scan[j].fragments + nf;
+        /* count fragments in chain */
+        for (cnf = nf, pf = dbx->scan[j].chains[nm]; cnf >= 0; cnf = pf->next) {
+          dbx->scan[j].chain_fragment_count[nm]++;
+          pf = dbx->scan[j].fragments + cnf;
+        }
         nf++;
       }
     }
@@ -729,6 +737,10 @@ void dbx_close(dbx_t *dbx)
         dbx->scan[i].chains = NULL;
         dbx->scan[i].count = 0;
       }
+      if (dbx->scan[i].chain_fragment_count) {
+        free(dbx->scan[i].chain_fragment_count);
+        dbx->scan[i].chain_fragment_count = NULL;
+      }
       if (dbx->scan[i].fragments) {
         free(dbx->scan[i].fragments);
         dbx->scan[i].fragments = NULL;
@@ -806,12 +818,16 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
   char *to = NULL;
   char *from = NULL;
 
+  if (dbx->scan[chain_index].chain_fragment_count[msg_number] > 0)
+    message = (char *)calloc(dbx->scan[chain_index].chain_fragment_count[msg_number], 0x200);
+  if (message == NULL)
+    return message;
+  
   for ( ; ifragment >= 0; ifragment = pfragment->next) {
     pfragment = dbx->scan[chain_index].fragments + ifragment;
     /* deleted fragments have size 0x210, which is wrong - it's 0x200 */
     fsize = pfragment->size <= 0x200? pfragment->size : 0x200;
     fseek(dbx->file, pfragment->offset + 16 - dbx->scan[chain_index].offset, SEEK_SET);
-    message = (char *)realloc(message, size + fsize + 1);
     sys_fread(message + size, fsize, 1, dbx->file);
     /* each deleted fragment starts with bad 4 bytes
        (it's set to the offset of the previous fragment)
