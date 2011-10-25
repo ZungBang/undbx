@@ -280,7 +280,7 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
   
   qsort(eml_files, num_eml_files, sizeof(char *), (dbx_cmpfunc_t) _str_cmp);
       
-  if (dbx->options->keep_deleted) {
+  if (!dbx->options->delete_deleted) {
     int rc = sys_mkdir(eml_dir, "deleted");
     if (rc != 0) {
       perror("_extract (sys_mkdir)");
@@ -325,8 +325,8 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
       ifile++;
     }
     else {
-      /* file on disk not found in dbx: delete from disk */
-      if (dbx->options->keep_deleted) {
+      /* file on disk not found in dbx: move it to 'deleted' sub-folder or delete from disk */
+      if (!dbx->options->delete_deleted) {
         int rc = sys_move(eml_dir, eml_files[ifile], "deleted");
         if (rc != 0) 
           perror("_extract (sys_move)");
@@ -375,7 +375,7 @@ static void _extract(dbx_t *dbx, char *out_dir, char *eml_dir, int *saved, int *
                    dbx->message_count - *saved - *errors,
                    *errors,
                    *deleted,
-                   dbx->options->keep_deleted? "moved":"deleted");
+                   !dbx->options->delete_deleted? "moved":"deleted");
   
   sys_glob_free(eml_files);
 }
@@ -486,8 +486,10 @@ static void _usage(char *prog, int rc)
           "\t-v, --verbosity N \t set verbosity level to N [default: 3]\n"
           "\t-r, --recover     \t enable recovery mode\n"
           "\t-s, --safe-mode   \t generate locale-safe file names\n"
-          "\t-k, --keep-deleted\t do not delete extracted messages\n"
-          "\t                  \t that were deleted from the dbx file\n" 
+          "\t-D, --delete      \t delete messages from the destination directory\n"
+          "\t                  \t that were deleted from the dbx file\n"
+          "\t                  \t [default behavior is to move such messages to\n"
+          "\t                  \t  a sub-directory named 'deleted']\n"
           "\t-i, --ignore0     \t ignore empty messages\n"
           "\t-d, --debug       \t output debug messages\n",
           prog);
@@ -549,13 +551,13 @@ int main(int argc, char *argv[])
       {"verbosity", required_argument, NULL, 'v'},
       {"recover", no_argument, NULL, 'r'},
       {"safe-mode", no_argument, NULL, 's'},
-      {"keep-deleted", no_argument, NULL, 'k'},
+      {"delete", no_argument, NULL, 'D'},
       {"ignore0", no_argument, NULL, 'i'},
       {"debug", no_argument, NULL, 'd'},
       {0, 0, 0, 0}
     };
     
-    c = getopt_long(argc, argv, "hVv:rskid", long_options, NULL);
+    c = getopt_long(argc, argv, "hVv:rsDid", long_options, NULL);
     if (c == -1 || c == '?' || c == ':')
       break;
     
@@ -575,8 +577,8 @@ int main(int argc, char *argv[])
     case 's':
       options.safe_mode = 1;
       break;
-    case 'k':
-      options.keep_deleted = 1;
+    case 'D':
+      options.delete_deleted = 1;
       break;
     case 'i':
       options.ignore0 = 1;

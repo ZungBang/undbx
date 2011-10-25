@@ -107,7 +107,7 @@ extern "C" {
   typedef struct {
     int recover;
     int safe_mode;
-    int keep_deleted;
+    int delete_deleted;
     int ignore0;
     dbx_verbosity_t verbosity;
     int debug;
