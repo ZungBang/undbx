@@ -433,16 +433,12 @@ static void _dbx_scan(dbx_t *dbx)
   int header[8] = {0};
   int header_start = 0;
   int ready = 0;
-  unsigned int i = 0;
+  unsigned long long int i = 0;
   int j = 0;
   
   dbx_progress_push(dbx->progress_handle, DBX_VERBOSITY_INFO, dbx->file_size, "Scanning %s", dbx->filename);
 
-  /* the following can only work if file size is less than 4G
-     (which is way over the 2GB dbx size limit)
-     mingw gcc (4.4.2) doesn't seem to like long longs
-  */
-  for (i = 0; i < (unsigned int)dbx->file_size; i += 4) {
+  for (i = 0; i < dbx->file_size; i += 4) {
     int deleted = 0;
     dbx_chains_t *chains = NULL;
     dbx_fragment_t *other = NULL;
