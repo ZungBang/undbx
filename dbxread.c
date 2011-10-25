@@ -558,9 +558,6 @@ static void _dbx_scan(dbx_t *dbx)
     ready = 0;
   }
 
-  dbx_progress_pop(dbx->progress_handle, NULL);
-  dbx_progress_push(dbx->progress_handle, DBX_VERBOSITY_INFO, -1, "Chaining fragments into messages");
-
   for (j = 0; j < dbx->scan_count; j++) {
     if (dbx->scan[j].count) {
       dbx_chains_t *chains = NULL;
@@ -601,8 +598,6 @@ static void _dbx_scan(dbx_t *dbx)
     }
   }
 
-  dbx_progress_pop(dbx->progress_handle, "done");
-
   /* collect the fragments that start messages chains
      messages start with fragments where prev == -1,
      i.e. no other fragment points to it
@@ -621,6 +616,8 @@ static void _dbx_scan(dbx_t *dbx)
       }
     }
   }
+
+  dbx_progress_pop(dbx->progress_handle, NULL);
 }
 
 static void _dbx_init(dbx_t *dbx)
