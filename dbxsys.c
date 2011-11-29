@@ -44,7 +44,7 @@
 #define JAN1ST1970 0x19DB1DED53E8000ULL
 #define NSPERSEC 1000000000ULL
 
-#ifdef __unix__
+#ifdef __APPLE__ || __unix__
 
 #include <glob.h>
 #include <sys/types.h>
