@@ -819,7 +819,7 @@ char *dbx_recover_message(dbx_t *dbx, int chain_index, int msg_number, unsigned 
   char *from = NULL;
 
   if (dbx->scan[chain_index].chain_fragment_count[msg_number] > 0)
-    message = (char *)calloc(dbx->scan[chain_index].chain_fragment_count[msg_number], 0x200);
+    message = (char *)calloc(1, dbx->scan[chain_index].chain_fragment_count[msg_number] * 0x200 + 1);
   if (message == NULL)
     return message;
   
