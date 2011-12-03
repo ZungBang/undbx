@@ -44,7 +44,7 @@
 #define JAN1ST1970 0x19DB1DED53E8000ULL
 #define NSPERSEC 1000000000ULL
 
-#ifdef __unix__
+#if defined(__APPLE__) || defined(__unix__)
 
 #include <glob.h>
 #include <sys/types.h>
@@ -95,7 +95,7 @@ static int _sys_set_time(char *filename, time_t timestamp)
   return utime(filename, &timbuf);
 }
 
-#endif /* __unix__ */
+#endif /*  defined(__APPLE__) || defined(__unix__) */
 
 #ifdef _WIN32
 
