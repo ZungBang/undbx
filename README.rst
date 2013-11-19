@@ -7,7 +7,7 @@ Outlook Express ``.dbx`` files.
 
 .. _UnDBX: http://code.google.com/p/undbx/
 
-Copyright (C) 2008-2011 Avi Rozen <avi.rozen@gmail.com>
+Copyright (C) 2008-2013 Avi Rozen <avi.rozen@gmail.com>
 
 DOWNLOAD
 --------

@@ -2,7 +2,7 @@
 <XML_DIZ_INFO>
 	<MASTER_PAD_VERSION_INFO>
 		<MASTER_PAD_VERSION>3.01</MASTER_PAD_VERSION>
-		<MASTER_PAD_EDITOR>GNU Emacs 23.1.1</MASTER_PAD_EDITOR>
+		<MASTER_PAD_EDITOR>GNU Emacs 23.4.1</MASTER_PAD_EDITOR>
 	</MASTER_PAD_VERSION_INFO>
 	<Company_Info>
 		<Company_Name>Machine Cycle</Company_Name>
@@ -33,10 +33,10 @@
 	</Company_Info>
 	<Program_Info>
 		<Program_Name>UnDBX</Program_Name>
-		<Program_Version>0.20</Program_Version>
-		<Program_Release_Month>05</Program_Release_Month>
-		<Program_Release_Day>14</Program_Release_Day>
-		<Program_Release_Year>2010</Program_Release_Year>
+		<Program_Version>0.21</Program_Version>
+		<Program_Release_Month>11</Program_Release_Month>
+		<Program_Release_Day>19</Program_Release_Day>
+		<Program_Release_Year>2013</Program_Release_Year>
 		<Program_Cost_Dollars/>
 		<Program_Cost_Other_Code/>
 		<Program_Cost_Other/>
@@ -50,8 +50,8 @@
 		<Program_Category_Class>Communications::Other E-Mail Tools</Program_Category_Class>
 		<Program_System_Requirements/>
 		<File_Info>
-			<File_Size_Bytes>46316</File_Size_Bytes>
-			<File_Size_K>45.2</File_Size_K>
+			<File_Size_Bytes>44607</File_Size_Bytes>
+			<File_Size_K>43.6</File_Size_K>
 			<File_Size_MB>0.04</File_Size_MB>
 		</File_Info>
 		<Expire_Info>
@@ -83,7 +83,7 @@
 			<Application_XML_File_URL>http://zungbang.googlepages.com/UnDBX.xml</Application_XML_File_URL>
 		</Application_URLs>
 		<Download_URLs>
-			<Primary_Download_URL>http://undbx.googlecode.com/files/undbx-0.20.zip</Primary_Download_URL>
+			<Primary_Download_URL>http://undbx.googlecode.com/files/undbx-0.21.zip</Primary_Download_URL>
 			<Secondary_Download_URL/>
 			<Additional_Download_URL_1/>
 			<Additional_Download_URL_2/>
