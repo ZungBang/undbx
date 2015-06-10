@@ -2,7 +2,7 @@
 <XML_DIZ_INFO>
 	<MASTER_PAD_VERSION_INFO>
 		<MASTER_PAD_VERSION>3.01</MASTER_PAD_VERSION>
-		<MASTER_PAD_EDITOR>GNU Emacs 23.4.1</MASTER_PAD_EDITOR>
+		<MASTER_PAD_EDITOR>GNU Emacs 24.4.1</MASTER_PAD_EDITOR>
 	</MASTER_PAD_VERSION_INFO>
 	<Company_Info>
 		<Company_Name>Machine Cycle</Company_Name>
@@ -76,14 +76,14 @@
 	</Program_Descriptions>
 	<Web_Info>
 		<Application_URLs>
-			<Application_Info_URL>http://code.google.com/p/undbx/</Application_Info_URL>
+			<Application_Info_URL>http://undbx.sourceforge.net/</Application_Info_URL>
 			<Application_Order_URL/>
 			<Application_Screenshot_URL>http://support.microsoft.com/library/images/support/en-us/HPlogo_OutlookExpress.gif</Application_Screenshot_URL>
 			<Application_Icon_URL>http://support.microsoft.com/library/images/support/en-us/HPlogo_OutlookExpress.gif</Application_Icon_URL>
 			<Application_XML_File_URL>http://zungbang.googlepages.com/UnDBX.xml</Application_XML_File_URL>
 		</Application_URLs>
 		<Download_URLs>
-			<Primary_Download_URL>http://undbx.googlecode.com/files/undbx-0.21.zip</Primary_Download_URL>
+			<Primary_Download_URL>http://sourceforge.net/projects/undbx/files/undbx-0.21.zip/download</Primary_Download_URL>
 			<Secondary_Download_URL/>
 			<Additional_Download_URL_1/>
 			<Additional_Download_URL_2/>

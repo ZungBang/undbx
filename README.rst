@@ -5,15 +5,15 @@ UnDBX
 `UnDBX`_ - Tool to extract, recover and undelete e-mail messages from
 Outlook Express ``.dbx`` files.
 
-.. _UnDBX: http://code.google.com/p/undbx/
+.. _UnDBX: http://undbx.sourceforge.net/
 
-Copyright (C) 2008-2013 Avi Rozen <avi.rozen@gmail.com>
+Copyright (C) 2008-2015 Avi Rozen <avi.rozen@gmail.com>
 
 DOWNLOAD
 --------
 
 Windows binary and source code archives are available at
-`<http://code.google.com/p/undbx/downloads/list>`_ together with
+`<https://sourceforge.net/projects/undbx/files/>`_ together with
 corresponding ``sha1sum`` digests, which you can use to verify each
 archive's integrity.
 
@@ -146,13 +146,13 @@ SNAPSHOT
 ~~~~~~~~
 
 **UnDBX** current source code snapshot is available at
-`<http://code.google.com/p/undbx/downloads/list>`_
+`<https://sourceforge.net/projects/undbx/files/>`_
 
 REPOSITORY
 ~~~~~~~~~~
 
 **UnDBX** development source code may be cloned from its public Git
-repository at `<http://github.com/ZungBang/undbx/tree>`_
+repository at `<https://sourceforge.net/p/undbx/code/>`_ or at `<http://github.com/ZungBang/undbx>`_
 
 COMPILING
 ~~~~~~~~~
@@ -161,8 +161,8 @@ COMPILING
 
 ::
 
-    tar -xvzf undbx-0.20.tar.gz
-    cd undbx-0.20
+    tar -xvzf undbx-0.21.tar.gz
+    cd undbx-0.21
     ./configure
     make
     make install
@@ -186,15 +186,15 @@ BUGS
 ----
 
 Please report problems via the **UnDBX** issue tracking system:
-`<http://code.google.com/p/undbx/issues/list>`_
+`<https://sourceforge.net/p/undbx/tickets/>`_
 
 CERTIFICATION
 -------------
 
 Well, it works on my machine :-) `[1]`_ `[2]`_
 
-.. _[1]: http://jcooney.net/archive/2007/02/01/42999.aspx
-.. _[2]: http://www.codinghorror.com/blog/archives/000818.html
+.. _[1]: http://jcooney.net/post/2007/02/01/New-Application-Certification-Program-It-Works-on-My-Machine.aspx
+.. _[2]: http://blog.codinghorror.com/the-works-on-my-machine-certification-program/
 
 CREDITS
 -------
