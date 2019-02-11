@@ -51,19 +51,18 @@ static int _dbx_info_cmp(const dbx_info_t *ia, const dbx_info_t *ib)
 
 static char *_dbx_read_string(FILE *file, int offset)
 {
-  char c[256];
+  char c[256] = {};
   char *s = NULL;
   int n = 0;
   int l = 0;
 
   fseek(file, offset, SEEK_SET);
-  c[255]='\0';
 
   do {
     sys_fread(c, 1, 255, file);
     l = strlen(c);
     s = realloc(s, n + l + 1);
-    strncpy(s + n, c, l);
+    memcpy(s + n, c, l);
     n += l;
     s[n] = '\0';
   } while (l == 255);
